@@ -8,15 +8,58 @@ use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
 
 final class ItemControllerTest extends WebTestCase
 {
-    public function testListReturnsAllItems(): void
+    public function testListReturnsFirstPageByDefault(): void
     {
         $client = static::createClient();
         $client->request('GET', '/api/items');
 
         self::assertResponseIsSuccessful();
-        $items = json_decode((string) $client->getResponse()->getContent(), true);
-        self::assertCount(23, $items);
-        self::assertSame(['id' => 'item-01', 'name' => 'Anvil', 'price' => ['amount' => 5, 'currency' => 'GBP'], 'createdAt' => '2026-01-01T09:00:00+00:00'], $items[0]);
+        $body = json_decode((string) $client->getResponse()->getContent(), true);
+
+        self::assertCount(10, $body['items']);
+        self::assertSame(1, $body['page']);
+        self::assertSame(10, $body['perPage']);
+        self::assertSame(23, $body['total']);
+        self::assertSame(['id' => 'item-01', 'name' => 'Anvil', 'price' => ['amount' => 5, 'currency' => 'GBP'], 'createdAt' => '2026-01-01T09:00:00+00:00'], $body['items'][0]);
+    }
+
+    public function testListWithPageThreeAndPerPageTenReturnsThreeItems(): void
+    {
+        $client = static::createClient();
+        $client->request('GET', '/api/items?page=3&perPage=10');
+
+        self::assertResponseIsSuccessful();
+        $body = json_decode((string) $client->getResponse()->getContent(), true);
+
+        self::assertCount(3, $body['items']);
+        self::assertSame(3, $body['page']);
+        self::assertSame(10, $body['perPage']);
+        self::assertSame(23, $body['total']);
+        self::assertSame(['id' => 'item-21', 'name' => 'Umbrella', 'price' => ['amount' => 30, 'currency' => 'GBP'], 'createdAt' => '2026-01-21T09:00:00+00:00'], $body['items'][0]);
+    }
+
+    public function testListCapsPerPageAtFifty(): void
+    {
+        $client = static::createClient();
+        $client->request('GET', '/api/items?perPage=100');
+
+        self::assertResponseIsSuccessful();
+        $body = json_decode((string) $client->getResponse()->getContent(), true);
+
+        self::assertCount(23, $body['items']);
+        self::assertSame(50, $body['perPage']);
+    }
+
+    public function testListTreatsPageBelowOneAsOne(): void
+    {
+        $client = static::createClient();
+        $client->request('GET', '/api/items?page=0');
+
+        self::assertResponseIsSuccessful();
+        $body = json_decode((string) $client->getResponse()->getContent(), true);
+
+        self::assertSame(1, $body['page']);
+        self::assertSame('item-01', $body['items'][0]['id']);
     }
 
     public function testGetReturnsOneItem(): void

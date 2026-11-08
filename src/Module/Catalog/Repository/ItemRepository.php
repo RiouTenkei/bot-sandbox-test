@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Module\Catalog\Repository;
 
 use App\Module\Catalog\Domain\Item;
+use App\Module\Catalog\Domain\Page;
 
 /**
  * Fixed in-memory catalogue, so the sandbox needs no database.
@@ -37,6 +38,19 @@ final class ItemRepository
         }
 
         return $this->items;
+    }
+
+    public function paginate(int $page, int $perPage): Page
+    {
+        $all = $this->all();
+        $offset = ($page - 1) * $perPage;
+
+        return new Page(
+            items: array_slice($all, $offset, $perPage),
+            page: $page,
+            perPage: $perPage,
+            total: count($all),
+        );
     }
 
     public function find(string $id): ?Item
