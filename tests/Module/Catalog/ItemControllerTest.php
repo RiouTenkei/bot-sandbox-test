@@ -58,6 +58,27 @@ final class ItemControllerTest extends WebTestCase
         self::assertSame('item-01', $items[0]['id']);
     }
 
+    public function testListWithMaxPriceIncludesExactBoundary(): void
+    {
+        $client = static::createClient();
+        $client->request('GET', '/api/items?maxPrice=6.25');
+
+        self::assertResponseIsSuccessful();
+        $items = json_decode((string) $client->getResponse()->getContent(), true);
+        self::assertSame(['item-01', 'item-02'], array_map(static fn (array $item): string => $item['id'], $items));
+    }
+
+    public function testListWithMaxPriceJustBelowBoundaryExcludesIt(): void
+    {
+        $client = static::createClient();
+        $client->request('GET', '/api/items?maxPrice=6.24');
+
+        self::assertResponseIsSuccessful();
+        $items = json_decode((string) $client->getResponse()->getContent(), true);
+        self::assertCount(1, $items);
+        self::assertSame('item-01', $items[0]['id']);
+    }
+
     public function testListWithMaxPriceZeroReturnsEmpty(): void
     {
         $client = static::createClient();
