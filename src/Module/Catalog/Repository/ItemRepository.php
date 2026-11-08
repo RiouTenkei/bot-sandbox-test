@@ -39,6 +39,17 @@ final class ItemRepository
         return $this->items;
     }
 
+    /** @return list<Item> */
+    public function allByMaxPrice(int $maxPriceMinor): array
+    {
+        return array_values(
+            array_filter(
+                $this->all(),
+                static fn (Item $item): bool => $item->priceMinor <= $maxPriceMinor,
+            ),
+        );
+    }
+
     public function find(string $id): ?Item
     {
         foreach ($this->all() as $item) {
