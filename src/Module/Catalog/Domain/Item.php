@@ -13,6 +13,7 @@ final readonly class Item
         public string $currency,
         public \DateTimeImmutable $createdAt,
         public Category $category,
+        public Supplier $supplier,
     ) {
     }
 }

@@ -7,6 +7,7 @@ namespace App\Module\Catalog\Repository;
 use App\Module\Catalog\Domain\Category;
 use App\Module\Catalog\Domain\Item;
 use App\Module\Catalog\Domain\Page;
+use App\Module\Catalog\Domain\Supplier;
 
 /**
  * Fixed in-memory catalogue, so the sandbox needs no database.
@@ -35,6 +36,7 @@ final class ItemRepository
                     currency: 'GBP',
                     createdAt: new \DateTimeImmutable(sprintf('2026-01-%02dT09:00:00+00:00', $i + 1)),
                     category: $this->categoryFor($i, $name),
+                    supplier: $this->supplierFor($i),
                 );
             }
         }
@@ -88,6 +90,20 @@ final class ItemRepository
         }
 
         return Category::garden();
+    }
+
+    private function supplierFor(int $index): Supplier
+    {
+        return match ($index % 8) {
+            0 => Supplier::acmeSupplies(),
+            1 => Supplier::bogusWholesale(),
+            2 => Supplier::demoDistributors(),
+            3 => Supplier::exampleEmporium(),
+            4 => Supplier::fixtureFoundry(),
+            5 => Supplier::gizmoGoods(),
+            6 => Supplier::horizonHardware(),
+            7 => Supplier::ipsumImports(),
+        };
     }
 
     /**
