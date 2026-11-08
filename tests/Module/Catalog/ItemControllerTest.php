@@ -38,6 +38,25 @@ final class ItemControllerTest extends WebTestCase
         self::assertResponseStatusCodeSame(404);
     }
 
+    public function testCountReturnsTotal(): void
+    {
+        $client = static::createClient();
+        $client->request('GET', '/api/items/count');
+
+        self::assertResponseIsSuccessful();
+        self::assertSame(['count' => 23], json_decode((string) $client->getResponse()->getContent(), true));
+    }
+
+    public function testGetItem01StillWorks(): void
+    {
+        $client = static::createClient();
+        $client->request('GET', '/api/items/item-01');
+
+        self::assertResponseIsSuccessful();
+        $item = json_decode((string) $client->getResponse()->getContent(), true);
+        self::assertSame('Anvil', $item['name']);
+    }
+
     public function testListFiltersByMaxPrice(): void
     {
         $client = static::createClient();
