@@ -9,7 +9,7 @@ use App\Module\Catalog\Domain\Page;
 
 final class ItemView
 {
-    /** @return array{id: string, name: string, price: array{amount: float, currency: string}, createdAt: string} */
+    /** @return array{id: string, name: string, price: array{amount: float, currency: string}, createdAt: string, category: array{id: string, name: string}} */
     public static function one(Item $item): array
     {
         return [
@@ -17,6 +17,7 @@ final class ItemView
             'name' => $item->name,
             'price' => ['amount' => $item->priceMinor / 100, 'currency' => $item->currency],
             'createdAt' => $item->createdAt->format(\DATE_ATOM),
+            'category' => ['id' => $item->category->id, 'name' => $item->category->name],
         ];
     }
 
