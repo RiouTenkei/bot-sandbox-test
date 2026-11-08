@@ -58,6 +58,18 @@ final class ItemController extends AbstractController
         return new JsonResponse(['count' => count($this->items->all())]);
     }
 
+    #[Route('/api/items/cheapest', methods: ['GET'], priority: 10)]
+    public function cheapest(): JsonResponse
+    {
+        $item = $this->items->findCheapest();
+
+        if (null === $item) {
+            return new JsonResponse(['error' => 'Item not found'], 404);
+        }
+
+        return new JsonResponse(ItemView::one($item));
+    }
+
     #[Route('/api/items/{id}', methods: ['GET'])]
     public function get(string $id): JsonResponse
     {

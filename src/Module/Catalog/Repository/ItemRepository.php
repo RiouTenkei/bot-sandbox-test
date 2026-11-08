@@ -77,6 +77,23 @@ final class ItemRepository
         return null;
     }
 
+    public function findCheapest(): ?Item
+    {
+        $cheapest = null;
+        foreach ($this->all() as $item) {
+            if (null === $cheapest || $item->priceMinor < $cheapest->priceMinor) {
+                $cheapest = $item;
+                continue;
+            }
+
+            if ($item->priceMinor === $cheapest->priceMinor && $item->id < $cheapest->id) {
+                $cheapest = $item;
+            }
+        }
+
+        return $cheapest;
+    }
+
     private function categoryFor(int $index, string $name): Category
     {
         if ($index < 8) {

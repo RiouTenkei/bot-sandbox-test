@@ -4,6 +4,9 @@ declare(strict_types=1);
 
 namespace App\Tests\Module\Catalog;
 
+use App\Module\Catalog\Domain\Category;
+use App\Module\Catalog\Domain\Item;
+use App\Module\Catalog\Repository\ItemRepository;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
 
 final class ItemControllerTest extends WebTestCase
@@ -120,6 +123,77 @@ final class ItemControllerTest extends WebTestCase
         $item = json_decode((string) $client->getResponse()->getContent(), true);
         self::assertSame('Anvil', $item['name']);
         self::assertSame(['id' => 'workshop', 'name' => 'Workshop'], $item['category']);
+    }
+
+    public function testCheapestReturnsLowestPriceItem(): void
+    {
+        $client = static::createClient();
+        $client->request('GET', '/api/items/cheapest');
+
+        self::assertResponseIsSuccessful();
+        $item = json_decode((string) $client->getResponse()->getContent(), true);
+
+        self::assertSame(
+            [
+                'id' => 'item-01',
+                'name' => 'Anvil',
+                'price' => ['amount' => 5, 'currency' => 'GBP'],
+                'createdAt' => '2026-01-01T09:00:00+00:00',
+                'category' => ['id' => 'workshop', 'name' => 'Workshop'],
+            ],
+            $item,
+        );
+    }
+
+    public function testCheapestTieBreaksByLowestId(): void
+    {
+        $client = static::createClient();
+        $items = $this->createTiedPriceCatalogue();
+        $this->replaceRepositoryItems($client, $items);
+
+        $client->request('GET', '/api/items/cheapest');
+
+        self::assertResponseIsSuccessful();
+        $item = json_decode((string) $client->getResponse()->getContent(), true);
+        self::assertSame('item-a', $item['id']);
+    }
+
+    public function testCheapestWithNoItemsReturns404(): void
+    {
+        $client = static::createClient();
+        $this->replaceRepositoryItems($client, []);
+
+        $client->request('GET', '/api/items/cheapest');
+
+        self::assertResponseStatusCodeSame(404);
+        self::assertResponseHeaderSame('content-type', 'application/json');
+        self::assertSame(['error' => 'Item not found'], json_decode((string) $client->getResponse()->getContent(), true));
+    }
+
+    /**
+     * @return list<Item>
+     */
+    private function createTiedPriceCatalogue(): array
+    {
+        $category = Category::workshop();
+        $createdAt = new \DateTimeImmutable('2026-01-01T09:00:00+00:00');
+
+        return [
+            new Item(id: 'item-b', name: 'B', priceMinor: 100, currency: 'GBP', createdAt: $createdAt, category: $category),
+            new Item(id: 'item-a', name: 'A', priceMinor: 100, currency: 'GBP', createdAt: $createdAt, category: $category),
+        ];
+    }
+
+    /**
+     * @param list<Item> $items
+     */
+    private function replaceRepositoryItems(\Symfony\Bundle\FrameworkBundle\KernelBrowser $client, array $items): void
+    {
+        $repository = $client->getContainer()->get(ItemRepository::class);
+        \assert($repository instanceof ItemRepository);
+
+        $reflection = new \ReflectionProperty($repository, 'items');
+        $reflection->setValue($repository, $items);
     }
 
     public function testListFiltersByMaxPrice(): void
