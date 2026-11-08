@@ -17,6 +17,12 @@ final class ItemControllerTest extends WebTestCase
         parent::setUp();
     }
 
+    protected function tearDown(): void
+    {
+        $this->fixtures()->resetToDefault();
+        parent::tearDown();
+    }
+
     private function fixtures(): CatalogTestFixtures
     {
         $fixtures = self::getContainer()->get(CatalogTestFixtures::class);

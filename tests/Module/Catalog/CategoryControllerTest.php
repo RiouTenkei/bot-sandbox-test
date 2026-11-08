@@ -4,10 +4,24 @@ declare(strict_types=1);
 
 namespace App\Tests\Module\Catalog;
 
+use App\Tests\Fixtures\CatalogTestFixtures;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
 
 final class CategoryControllerTest extends WebTestCase
 {
+    protected function setUp(): void
+    {
+        parent::setUp();
+    }
+
+    protected function tearDown(): void
+    {
+        $fixtures = self::getContainer()->get(CatalogTestFixtures::class);
+        \assert($fixtures instanceof CatalogTestFixtures);
+        $fixtures->resetToDefault();
+        parent::tearDown();
+    }
+
     public function testCategoriesReturnsCategoriesSortedByNameWithCounts(): void
     {
         $client = static::createClient();
