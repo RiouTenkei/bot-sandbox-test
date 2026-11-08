@@ -11,15 +11,18 @@ final class CategoryControllerTest extends WebTestCase
 {
     protected function setUp(): void
     {
+        self::bootKernel();
+        $this->fixtures()->resetToDefault();
+        self::ensureKernelShutdown();
         parent::setUp();
     }
 
-    protected function tearDown(): void
+    private function fixtures(): CatalogTestFixtures
     {
         $fixtures = self::getContainer()->get(CatalogTestFixtures::class);
         \assert($fixtures instanceof CatalogTestFixtures);
-        $fixtures->resetToDefault();
-        parent::tearDown();
+
+        return $fixtures;
     }
 
     public function testCategoriesReturnsCategoriesSortedByNameWithCounts(): void

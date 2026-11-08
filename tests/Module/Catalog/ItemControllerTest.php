@@ -14,13 +14,10 @@ final class ItemControllerTest extends WebTestCase
 {
     protected function setUp(): void
     {
-        parent::setUp();
-    }
-
-    protected function tearDown(): void
-    {
+        self::bootKernel();
         $this->fixtures()->resetToDefault();
-        parent::tearDown();
+        self::ensureKernelShutdown();
+        parent::setUp();
     }
 
     private function fixtures(): CatalogTestFixtures
@@ -29,11 +26,6 @@ final class ItemControllerTest extends WebTestCase
         \assert($fixtures instanceof CatalogTestFixtures);
 
         return $fixtures;
-    }
-
-    public function resetFixturesToDefault(): void
-    {
-        $this->fixtures()->resetToDefault();
     }
 
     public function testListReturnsFirstPageByDefault(): void
