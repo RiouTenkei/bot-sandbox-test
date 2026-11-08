@@ -1,0 +1,7 @@
+# Every change needs a human review. Tests, CI and test config are called out
+# so a bot can't quietly weaken them to get a green build.
+*                   @RiouTenkei
+/tests/             @RiouTenkei
+/.github/           @RiouTenkei
+/phpunit.dist.xml   @RiouTenkei
+/composer.json      @RiouTenkei

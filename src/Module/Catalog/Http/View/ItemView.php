@@ -1,0 +1,36 @@
+<?php
+
+declare(strict_types=1);
+
+namespace App\Module\Catalog\Http\View;
+
+use App\Module\Catalog\Domain\Item;
+
+final class ItemView
+{
+    /** @return array{id: string, name: string, price: array{amount: float, currency: string}, createdAt: string} */
+    public static function one(Item $item): array
+    {
+        return [
+            'id' => $item->id,
+            'name' => $item->name,
+            'price' => ['amount' => $item->priceMinor / 100, 'currency' => $item->currency],
+            'createdAt' => $item->createdAt->format(\DATE_ATOM),
+        ];
+    }
+
+    /**
+     * @param iterable<Item> $items
+     *
+     * @return list<array<string, mixed>>
+     */
+    public static function many(iterable $items): array
+    {
+        $out = [];
+        foreach ($items as $item) {
+            $out[] = self::one($item);
+        }
+
+        return $out;
+    }
+}
