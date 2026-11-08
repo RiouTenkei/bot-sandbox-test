@@ -26,4 +26,14 @@ final readonly class Category
     {
         return new self('garden', 'Garden');
     }
+
+    /** @return list<self> */
+    public static function all(): array
+    {
+        return [
+            self::workshop(),
+            self::writing(),
+            self::garden(),
+        ];
+    }
 }

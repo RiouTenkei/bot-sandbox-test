@@ -85,32 +85,19 @@ final class ItemRepository
         return null;
     }
 
-    /** @return array<int, array{id: string, name: string, itemCount: int}> */
-    public function categories(): array
+    /** @return array<string, int> category id => item count */
+    public function categoryCounts(): array
     {
-        $counts = ['workshop' => 0, 'writing' => 0, 'garden' => 0];
+        $counts = [];
+        foreach (Category::all() as $category) {
+            $counts[$category->id] = 0;
+        }
+
         foreach ($this->all() as $item) {
             ++$counts[$item->category->id];
         }
 
-        $categories = [
-            Category::garden(),
-            Category::workshop(),
-            Category::writing(),
-        ];
-
-        $out = [];
-        foreach ($categories as $category) {
-            $out[] = [
-                'id' => $category->id,
-                'name' => $category->name,
-                'itemCount' => $counts[$category->id],
-            ];
-        }
-
-        usort($out, static fn (array $a, array $b): int => $a['name'] <=> $b['name']);
-
-        return $out;
+        return $counts;
     }
 
     private function resolveCategory(string $name): Category

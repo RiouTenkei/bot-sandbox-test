@@ -16,4 +16,25 @@ final class CategoryView
             'name' => $category->name,
         ];
     }
+
+    /**
+     * @param array<string, int> $counts
+     *
+     * @return list<array{id: string, name: string, itemCount: int}>
+     */
+    public static function withCounts(array $counts): array
+    {
+        $out = [];
+        foreach (Category::all() as $category) {
+            $out[] = [
+                'id' => $category->id,
+                'name' => $category->name,
+                'itemCount' => $counts[$category->id] ?? 0,
+            ];
+        }
+
+        usort($out, static fn (array $a, array $b): int => $a['name'] <=> $b['name']);
+
+        return $out;
+    }
 }
