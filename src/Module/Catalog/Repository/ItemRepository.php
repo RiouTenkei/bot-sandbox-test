@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Module\Catalog\Repository;
 
+use App\Module\Catalog\Domain\Category;
 use App\Module\Catalog\Domain\Item;
 use App\Module\Catalog\Domain\Page;
 
@@ -33,6 +34,7 @@ final class ItemRepository
                     priceMinor: 500 + $i * 125,
                     currency: 'GBP',
                     createdAt: new \DateTimeImmutable(sprintf('2026-01-%02dT09:00:00+00:00', $i + 1)),
+                    category: $this->categoryFor($i, $name),
                 );
             }
         }
@@ -73,5 +75,40 @@ final class ItemRepository
         }
 
         return null;
+    }
+
+    private function categoryFor(int $index, string $name): Category
+    {
+        if ($index < 8) {
+            return Category::workshop();
+        }
+
+        if ('Inkwell' === $name || 'Quill' === $name) {
+            return Category::writing();
+        }
+
+        return Category::garden();
+    }
+
+    /**
+     * @return list<array{category: Category, count: int}>
+     */
+    public function categoriesWithCounts(): array
+    {
+        $counts = [];
+        foreach ($this->all() as $item) {
+            $id = $item->category->id;
+            if (!isset($counts[$id])) {
+                $counts[$id] = ['category' => $item->category, 'count' => 0];
+            }
+            ++$counts[$id]['count'];
+        }
+
+        usort(
+            $counts,
+            static fn (array $a, array $b): int => $a['category']->name <=> $b['category']->name,
+        );
+
+        return array_values($counts);
     }
 }

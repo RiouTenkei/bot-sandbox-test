@@ -12,6 +12,7 @@ final readonly class Item
         public int $priceMinor,
         public string $currency,
         public \DateTimeImmutable $createdAt,
+        public Category $category,
     ) {
     }
 }
