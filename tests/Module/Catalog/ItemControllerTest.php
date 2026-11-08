@@ -27,7 +27,7 @@ final class ItemControllerTest extends WebTestCase
                 'price' => ['amount' => 5, 'currency' => 'GBP'],
                 'createdAt' => '2026-01-01T09:00:00+00:00',
                 'category' => ['id' => 'workshop', 'name' => 'Workshop'],
-                'supplier' => ['name' => 'Acme Supplies', 'email' => 'orders@acmesupplies.test', 'phone' => '+44 20 7946 0001'],
+                'supplier' => ['name' => 'Acme Supplies'],
             ],
             $body['items'][0],
         );
@@ -52,7 +52,7 @@ final class ItemControllerTest extends WebTestCase
                 'price' => ['amount' => 30, 'currency' => 'GBP'],
                 'createdAt' => '2026-01-21T09:00:00+00:00',
                 'category' => ['id' => 'garden', 'name' => 'Garden'],
-                'supplier' => ['name' => 'Fixture Foundry', 'email' => 'stock@fixturefoundry.test', 'phone' => '+44 20 7946 0005'],
+                'supplier' => ['name' => 'Fixture Foundry'],
             ],
             $body['items'][0],
         );
@@ -140,7 +140,7 @@ final class ItemControllerTest extends WebTestCase
                 'price' => ['amount' => 5, 'currency' => 'GBP'],
                 'createdAt' => '2026-01-01T09:00:00+00:00',
                 'category' => ['id' => 'workshop', 'name' => 'Workshop'],
-                'supplier' => ['name' => 'Acme Supplies', 'email' => 'orders@acmesupplies.test', 'phone' => '+44 20 7946 0001'],
+                'supplier' => ['name' => 'Acme Supplies'],
             ],
             $body['items'][0],
         );
@@ -158,8 +158,8 @@ final class ItemControllerTest extends WebTestCase
         foreach ($body['items'] as $item) {
             self::assertArrayHasKey('supplier', $item);
             self::assertArrayHasKey('name', $item['supplier']);
-            self::assertArrayHasKey('email', $item['supplier']);
-            self::assertArrayHasKey('phone', $item['supplier']);
+            self::assertIsString($item['supplier']['name']);
+            self::assertNotSame('', $item['supplier']['name']);
         }
 
         $client->request('GET', '/api/items/item-01');
@@ -167,9 +167,7 @@ final class ItemControllerTest extends WebTestCase
         self::assertResponseIsSuccessful();
         $item = json_decode((string) $client->getResponse()->getContent(), true);
         self::assertArrayHasKey('supplier', $item);
-        self::assertSame('Acme Supplies', $item['supplier']['name']);
-        self::assertArrayHasKey('email', $item['supplier']);
-        self::assertArrayHasKey('phone', $item['supplier']);
+        self::assertSame(['name' => 'Acme Supplies'], $item['supplier']);
     }
 
     public function testListWithMaxPriceZeroReturnsEmpty(): void
