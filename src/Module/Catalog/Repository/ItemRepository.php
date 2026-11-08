@@ -22,6 +22,9 @@ final class ItemRepository
     /** @var list<Item>|null */
     private ?array $items = null;
 
+    private ?Item $cheapest = null;
+    private bool $cheapestLoaded = false;
+
     /** @return list<Item> */
     public function all(): array
     {
@@ -79,6 +82,10 @@ final class ItemRepository
 
     public function findCheapest(): ?Item
     {
+        if ($this->cheapestLoaded) {
+            return $this->cheapest;
+        }
+
         $cheapest = null;
         foreach ($this->all() as $item) {
             if (null === $cheapest || $item->priceMinor < $cheapest->priceMinor) {
@@ -90,6 +97,9 @@ final class ItemRepository
                 $cheapest = $item;
             }
         }
+
+        $this->cheapest = $cheapest;
+        $this->cheapestLoaded = true;
 
         return $cheapest;
     }

@@ -185,6 +185,10 @@ final class ItemControllerTest extends WebTestCase
     }
 
     /**
+     * The repository intentionally has no setter (fixed in-memory catalogue), so
+     * tests mutate the private backing store via reflection to exercise edge
+     * states without adding test-only API to production code.
+     *
      * @param list<Item> $items
      */
     private function replaceRepositoryItems(\Symfony\Bundle\FrameworkBundle\KernelBrowser $client, array $items): void
@@ -192,8 +196,11 @@ final class ItemControllerTest extends WebTestCase
         $repository = $client->getContainer()->get(ItemRepository::class);
         \assert($repository instanceof ItemRepository);
 
-        $reflection = new \ReflectionProperty($repository, 'items');
-        $reflection->setValue($repository, $items);
+        $itemsReflection = new \ReflectionProperty($repository, 'items');
+        $itemsReflection->setValue($repository, $items);
+
+        $loadedReflection = new \ReflectionProperty($repository, 'cheapestLoaded');
+        $loadedReflection->setValue($repository, false);
     }
 
     public function testListFiltersByMaxPrice(): void
