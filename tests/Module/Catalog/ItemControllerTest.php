@@ -146,6 +146,10 @@ final class ItemControllerTest extends WebTestCase
         );
     }
 
+    /**
+     * Verifies every public item response includes a supplier name and no
+     * contact details, because these endpoints are unauthenticated.
+     */
     public function testEveryItemHasSupplier(): void
     {
         $client = static::createClient();
@@ -157,9 +161,10 @@ final class ItemControllerTest extends WebTestCase
         self::assertCount(23, $body['items']);
         foreach ($body['items'] as $item) {
             self::assertArrayHasKey('supplier', $item);
-            self::assertArrayHasKey('name', $item['supplier']);
-            self::assertIsString($item['supplier']['name']);
-            self::assertNotSame('', $item['supplier']['name']);
+            self::assertIsArray($item['supplier']);
+            self::assertSame(['name' => $item['supplier']['name']], $item['supplier']);
+            self::assertArrayNotHasKey('email', $item['supplier']);
+            self::assertArrayNotHasKey('phone', $item['supplier']);
         }
 
         $client->request('GET', '/api/items/item-01');
@@ -168,6 +173,8 @@ final class ItemControllerTest extends WebTestCase
         $item = json_decode((string) $client->getResponse()->getContent(), true);
         self::assertArrayHasKey('supplier', $item);
         self::assertSame(['name' => 'Acme Supplies'], $item['supplier']);
+        self::assertArrayNotHasKey('email', $item['supplier']);
+        self::assertArrayNotHasKey('phone', $item['supplier']);
     }
 
     public function testListWithMaxPriceZeroReturnsEmpty(): void
