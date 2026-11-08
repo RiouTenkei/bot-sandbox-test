@@ -20,7 +20,7 @@ final class ItemControllerTest extends WebTestCase
         self::assertSame(1, $body['page']);
         self::assertSame(10, $body['perPage']);
         self::assertSame(23, $body['total']);
-        self::assertSame(['id' => 'item-01', 'name' => 'Anvil', 'price' => ['amount' => 5, 'currency' => 'GBP'], 'createdAt' => '2026-01-01T09:00:00+00:00'], $body['items'][0]);
+        self::assertSame(['id' => 'item-01', 'name' => 'Anvil', 'price' => ['amount' => 5, 'currency' => 'GBP'], 'category' => ['id' => 'workshop', 'name' => 'Workshop'], 'createdAt' => '2026-01-01T09:00:00+00:00'], $body['items'][0]);
     }
 
     public function testListWithPageThreeAndPerPageTenReturnsThreeItems(): void
@@ -35,7 +35,7 @@ final class ItemControllerTest extends WebTestCase
         self::assertSame(3, $body['page']);
         self::assertSame(10, $body['perPage']);
         self::assertSame(23, $body['total']);
-        self::assertSame(['id' => 'item-21', 'name' => 'Umbrella', 'price' => ['amount' => 30, 'currency' => 'GBP'], 'createdAt' => '2026-01-21T09:00:00+00:00'], $body['items'][0]);
+        self::assertSame(['id' => 'item-21', 'name' => 'Umbrella', 'price' => ['amount' => 30, 'currency' => 'GBP'], 'category' => ['id' => 'garden', 'name' => 'Garden'], 'createdAt' => '2026-01-21T09:00:00+00:00'], $body['items'][0]);
     }
 
     public function testListCapsPerPageAtFifty(): void
@@ -111,7 +111,7 @@ final class ItemControllerTest extends WebTestCase
         $body = json_decode((string) $client->getResponse()->getContent(), true);
         self::assertCount(1, $body['items']);
         self::assertSame(1, $body['total']);
-        self::assertSame(['id' => 'item-01', 'name' => 'Anvil', 'price' => ['amount' => 5, 'currency' => 'GBP'], 'createdAt' => '2026-01-01T09:00:00+00:00'], $body['items'][0]);
+        self::assertSame(['id' => 'item-01', 'name' => 'Anvil', 'price' => ['amount' => 5, 'currency' => 'GBP'], 'category' => ['id' => 'workshop', 'name' => 'Workshop'], 'createdAt' => '2026-01-01T09:00:00+00:00'], $body['items'][0]);
     }
 
     public function testListWithMaxPriceZeroReturnsEmpty(): void
@@ -123,6 +123,33 @@ final class ItemControllerTest extends WebTestCase
         $body = json_decode((string) $client->getResponse()->getContent(), true);
         self::assertSame([], $body['items']);
         self::assertSame(0, $body['total']);
+    }
+
+    public function testCategoriesReturnsCategoriesSortedByName(): void
+    {
+        $client = static::createClient();
+        $client->request('GET', '/api/categories');
+
+        self::assertResponseIsSuccessful();
+        $body = json_decode((string) $client->getResponse()->getContent(), true);
+
+        self::assertSame([
+            ['id' => 'garden', 'name' => 'Garden', 'itemCount' => 13],
+            ['id' => 'workshop', 'name' => 'Workshop', 'itemCount' => 8],
+            ['id' => 'writing', 'name' => 'Writing', 'itemCount' => 2],
+        ], $body);
+    }
+
+    public function testCategoryItemCountsSumTo23(): void
+    {
+        $client = static::createClient();
+        $client->request('GET', '/api/categories');
+
+        self::assertResponseIsSuccessful();
+        $body = json_decode((string) $client->getResponse()->getContent(), true);
+
+        $total = array_sum(array_column($body, 'itemCount'));
+        self::assertSame(23, $total);
     }
 
     public function testListWithInvalidMaxPriceReturns400(): void

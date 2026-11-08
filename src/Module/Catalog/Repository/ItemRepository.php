@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Module\Catalog\Repository;
 
+use App\Module\Catalog\Domain\Category;
 use App\Module\Catalog\Domain\Item;
 use App\Module\Catalog\Domain\Page;
 
@@ -33,6 +34,7 @@ final class ItemRepository
                     priceMinor: 500 + $i * 125,
                     currency: 'GBP',
                     createdAt: new \DateTimeImmutable(sprintf('2026-01-%02dT09:00:00+00:00', $i + 1)),
+                    category: Category::fromName($name),
                 );
             }
         }
@@ -62,6 +64,22 @@ final class ItemRepository
                 static fn (Item $item): bool => $item->priceMinor <= $maxPriceMinor,
             ),
         );
+    }
+
+    /**
+     * @return list<array{category: Category, count: int}>
+     */
+    public function categoryCounts(): array
+    {
+        $counts = [];
+
+        foreach ($this->all() as $item) {
+            $categoryId = $item->category->id();
+            $counts[$categoryId] ??= ['category' => $item->category, 'count' => 0];
+            $counts[$categoryId]['count']++;
+        }
+
+        return array_values($counts);
     }
 
     public function find(string $id): ?Item

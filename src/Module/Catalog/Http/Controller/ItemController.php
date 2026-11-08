@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Module\Catalog\Http\Controller;
 
+use App\Module\Catalog\Http\View\CategoryView;
 use App\Module\Catalog\Http\View\ItemView;
 use App\Module\Catalog\Repository\ItemRepository;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -56,6 +57,12 @@ final class ItemController extends AbstractController
     public function count(): JsonResponse
     {
         return new JsonResponse(['count' => count($this->items->all())]);
+    }
+
+    #[Route('/api/categories', methods: ['GET'])]
+    public function categories(): JsonResponse
+    {
+        return new JsonResponse(CategoryView::list($this->items->categoryCounts()));
     }
 
     #[Route('/api/items/{id}', methods: ['GET'])]
