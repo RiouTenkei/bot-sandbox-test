@@ -19,6 +19,16 @@ final class ItemControllerTest extends WebTestCase
         self::assertSame(['id' => 'item-01', 'name' => 'Anvil', 'price' => ['amount' => 5, 'currency' => 'GBP'], 'createdAt' => '2026-01-01T09:00:00+00:00'], $items[0]);
     }
 
+    public function testCountReturnsNumberOfItems(): void
+    {
+        $client = static::createClient();
+        $client->request('GET', '/api/items/count');
+
+        self::assertResponseIsSuccessful();
+        $body = json_decode((string) $client->getResponse()->getContent(), true);
+        self::assertSame(['count' => 23], $body);
+    }
+
     public function testGetReturnsOneItem(): void
     {
         $client = static::createClient();
