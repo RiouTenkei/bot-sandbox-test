@@ -19,5 +19,10 @@ services:
     App\:
         resource: '../src/'
 
+    App\Tests\Fixtures\CatalogTestFixtures:
+        public: true
+        arguments:
+            $connection: '@doctrine.dbal.default_connection'
+
     # add more service definitions when explicit configuration is needed
     # please note that last definitions always *replace* previous ones

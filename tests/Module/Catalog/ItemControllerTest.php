@@ -7,10 +7,29 @@ namespace App\Tests\Module\Catalog;
 use App\Module\Catalog\Domain\Category;
 use App\Module\Catalog\Domain\Item;
 use App\Module\Catalog\Repository\ItemRepository;
+use App\Tests\Fixtures\CatalogTestFixtures;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
 
 final class ItemControllerTest extends WebTestCase
 {
+    protected function setUp(): void
+    {
+        parent::setUp();
+    }
+
+    private function fixtures(): CatalogTestFixtures
+    {
+        $fixtures = self::getContainer()->get(CatalogTestFixtures::class);
+        \assert($fixtures instanceof CatalogTestFixtures);
+
+        return $fixtures;
+    }
+
+    public function resetFixturesToDefault(): void
+    {
+        $this->fixtures()->resetToDefault();
+    }
+
     public function testListReturnsFirstPageByDefault(): void
     {
         $client = static::createClient();
@@ -185,22 +204,11 @@ final class ItemControllerTest extends WebTestCase
     }
 
     /**
-     * The repository intentionally has no setter (fixed in-memory catalogue), so
-     * tests mutate the private backing store via reflection to exercise edge
-     * states without adding test-only API to production code.
-     *
      * @param list<Item> $items
      */
     private function replaceRepositoryItems(\Symfony\Bundle\FrameworkBundle\KernelBrowser $client, array $items): void
     {
-        $repository = $client->getContainer()->get(ItemRepository::class);
-        \assert($repository instanceof ItemRepository);
-
-        $itemsReflection = new \ReflectionProperty($repository, 'items');
-        $itemsReflection->setValue($repository, $items);
-
-        $loadedReflection = new \ReflectionProperty($repository, 'cheapestLoaded');
-        $loadedReflection->setValue($repository, false);
+        $this->fixtures()->replaceItems($items);
     }
 
     public function testListFiltersByMaxPrice(): void

@@ -55,6 +55,15 @@ final class ItemRepository extends ServiceEntityRepository
     }
 
     /** @return list<Item> */
+    public function all(): array
+    {
+        return $this->createQueryBuilder('i')
+            ->orderBy('i.id', 'ASC')
+            ->getQuery()
+            ->getResult();
+    }
+
+    /** @return list<Item> */
     public function allByMaxPrice(int $maxPriceMinor): array
     {
         return $this->createQueryBuilder('i')
@@ -90,16 +99,17 @@ final class ItemRepository extends ServiceEntityRepository
     public function categoriesWithCounts(): array
     {
         $rows = $this->createQueryBuilder('i')
-            ->select('c AS category, COUNT(i.id) AS count')
+            ->select('c.id AS categoryId, c.name AS categoryName, COUNT(i.id) AS count')
             ->join('i.category', 'c')
             ->groupBy('c.id')
+            ->addGroupBy('c.name')
             ->orderBy('c.name', 'ASC')
             ->getQuery()
             ->getResult();
 
         return array_map(
             static fn (array $row): array => [
-                'category' => $row['category'],
+                'category' => new Category((string) $row['categoryId'], (string) $row['categoryName']),
                 'count' => (int) $row['count'],
             ],
             $rows,
