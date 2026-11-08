@@ -73,7 +73,7 @@ final class ItemController extends AbstractController
     #[Route('/api/items/{id}', methods: ['GET'])]
     public function get(string $id): JsonResponse
     {
-        $item = $this->items->find($id);
+        $item = $this->items->findOne($id);
 
         if (null === $item) {
             return new JsonResponse(['error' => 'Item not found'], 404);

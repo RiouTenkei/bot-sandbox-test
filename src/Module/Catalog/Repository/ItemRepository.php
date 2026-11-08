@@ -7,122 +7,81 @@ namespace App\Module\Catalog\Repository;
 use App\Module\Catalog\Domain\Category;
 use App\Module\Catalog\Domain\Item;
 use App\Module\Catalog\Domain\Page;
+use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
+use Doctrine\Persistence\ManagerRegistry;
 
 /**
- * Fixed in-memory catalogue, so the sandbox needs no database.
+ * @extends ServiceEntityRepository<Item>
  */
-final class ItemRepository
+final class ItemRepository extends ServiceEntityRepository
 {
-    private const NAMES = [
-        'Anvil', 'Bellows', 'Chisel', 'Drill', 'Easel', 'File', 'Gouge', 'Hammer',
-        'Inkwell', 'Jigsaw', 'Kettle', 'Ladder', 'Mallet', 'Needle', 'Oilcan',
-        'Plane', 'Quill', 'Rasp', 'Saw', 'Trowel', 'Umbrella', 'Vice', 'Wrench',
-    ];
-
-    /** @var list<Item>|null */
-    private ?array $items = null;
-
-    private ?Item $cheapest = null;
-    private bool $cheapestLoaded = false;
-
-    /** @return list<Item> */
-    public function all(): array
+    public function __construct(ManagerRegistry $registry)
     {
-        if (null === $this->items) {
-            $this->items = [];
-            foreach (self::NAMES as $i => $name) {
-                $this->items[] = new Item(
-                    id: sprintf('item-%02d', $i + 1),
-                    name: $name,
-                    priceMinor: 500 + $i * 125,
-                    currency: 'GBP',
-                    createdAt: new \DateTimeImmutable(sprintf('2026-01-%02dT09:00:00+00:00', $i + 1)),
-                    category: $this->categoryFor($i, $name),
-                );
-            }
-        }
-
-        return $this->items;
+        parent::__construct($registry, Item::class);
     }
 
     public function paginate(int $page, int $perPage, ?array $items = null): Page
     {
-        $items ??= $this->all();
-        $offset = ($page - 1) * $perPage;
+        if (null !== $items) {
+            $total = count($items);
+            $offset = ($page - 1) * $perPage;
+
+            return new Page(
+                items: array_slice($items, $offset, $perPage),
+                page: $page,
+                perPage: $perPage,
+                total: $total,
+            );
+        }
+
+        $total = (int) $this->createQueryBuilder('i')
+            ->select('COUNT(i.id)')
+            ->getQuery()
+            ->getSingleScalarResult();
+
+        $items = $this->createQueryBuilder('i')
+            ->orderBy('i.id', 'ASC')
+            ->setFirstResult(($page - 1) * $perPage)
+            ->setMaxResults($perPage)
+            ->getQuery()
+            ->getResult();
 
         return new Page(
-            items: array_slice($items, $offset, $perPage),
+            items: $items,
             page: $page,
             perPage: $perPage,
-            total: count($items),
+            total: $total,
         );
     }
 
     /** @return list<Item> */
     public function allByMaxPrice(int $maxPriceMinor): array
     {
-        return array_values(
-            array_filter(
-                $this->all(),
-                static fn (Item $item): bool => $item->priceMinor <= $maxPriceMinor,
-            ),
-        );
+        return $this->createQueryBuilder('i')
+            ->where('i.priceMinor <= :maxPrice')
+            ->setParameter('maxPrice', $maxPriceMinor)
+            ->orderBy('i.id', 'ASC')
+            ->getQuery()
+            ->getResult();
     }
 
-    public function find(string $id): ?Item
+    public function findOne(string $id): ?Item
     {
-        foreach ($this->all() as $item) {
-            if ($item->id === $id) {
-                return $item;
-            }
-        }
-
-        return null;
+        return $this->createQueryBuilder('i')
+            ->where('i.id = :id')
+            ->setParameter('id', $id)
+            ->getQuery()
+            ->getOneOrNullResult();
     }
 
-    /**
-     * Finds the cheapest item, breaking ties by the lowest id.
-     *
-     * This repository is backed by a fixed in-memory catalogue, so a single
-     * linear scan is acceptable and the result is memoised for subsequent
-     * calls. If this catalogue is ever moved to a real database, replace this
-     * in-PHP scan with a query that orders by price and id and returns one row.
-     */
     public function findCheapest(): ?Item
     {
-        if ($this->cheapestLoaded) {
-            return $this->cheapest;
-        }
-
-        $cheapest = null;
-        foreach ($this->all() as $item) {
-            if (null === $cheapest || $item->priceMinor < $cheapest->priceMinor) {
-                $cheapest = $item;
-                continue;
-            }
-
-            if ($item->priceMinor === $cheapest->priceMinor && $item->id < $cheapest->id) {
-                $cheapest = $item;
-            }
-        }
-
-        $this->cheapest = $cheapest;
-        $this->cheapestLoaded = true;
-
-        return $cheapest;
-    }
-
-    private function categoryFor(int $index, string $name): Category
-    {
-        if ($index < 8) {
-            return Category::workshop();
-        }
-
-        if ('Inkwell' === $name || 'Quill' === $name) {
-            return Category::writing();
-        }
-
-        return Category::garden();
+        return $this->createQueryBuilder('i')
+            ->orderBy('i.priceMinor', 'ASC')
+            ->addOrderBy('i.id', 'ASC')
+            ->setMaxResults(1)
+            ->getQuery()
+            ->getOneOrNullResult();
     }
 
     /**
@@ -130,20 +89,20 @@ final class ItemRepository
      */
     public function categoriesWithCounts(): array
     {
-        $counts = [];
-        foreach ($this->all() as $item) {
-            $id = $item->category->id;
-            if (!isset($counts[$id])) {
-                $counts[$id] = ['category' => $item->category, 'count' => 0];
-            }
-            ++$counts[$id]['count'];
-        }
+        $rows = $this->createQueryBuilder('i')
+            ->select('c AS category, COUNT(i.id) AS count')
+            ->join('i.category', 'c')
+            ->groupBy('c.id')
+            ->orderBy('c.name', 'ASC')
+            ->getQuery()
+            ->getResult();
 
-        usort(
-            $counts,
-            static fn (array $a, array $b): int => $a['category']->name <=> $b['category']->name,
+        return array_map(
+            static fn (array $row): array => [
+                'category' => $row['category'],
+                'count' => (int) $row['count'],
+            ],
+            $rows,
         );
-
-        return array_values($counts);
     }
 }
