@@ -6,7 +6,6 @@ namespace App\Tests\Module\Catalog;
 
 use App\Module\Catalog\Domain\Category;
 use App\Module\Catalog\Domain\Item;
-use App\Module\Catalog\Repository\ItemRepository;
 use App\Tests\Fixtures\CatalogTestFixtures;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
 

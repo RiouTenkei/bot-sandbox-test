@@ -1,0 +1,10 @@
+# Test-only services, loaded automatically in the test environment.
+services:
+    _defaults:
+        autowire: true
+        autoconfigure: true
+
+    App\Tests\Fixtures\CatalogTestFixtures:
+        public: true
+        arguments:
+            $connection: '@doctrine.dbal.default_connection'
