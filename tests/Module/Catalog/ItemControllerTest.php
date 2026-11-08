@@ -74,6 +74,17 @@ final class ItemControllerTest extends WebTestCase
         self::assertSame(['id' => 'workshop', 'name' => 'Workshop'], $item['category']);
     }
 
+    public function testGetReturnsWritingItem(): void
+    {
+        $client = static::createClient();
+        $client->request('GET', '/api/items/item-09');
+
+        self::assertResponseIsSuccessful();
+        $item = json_decode((string) $client->getResponse()->getContent(), true);
+        self::assertSame('Inkwell', $item['name']);
+        self::assertSame(['id' => 'writing', 'name' => 'Writing'], $item['category']);
+    }
+
     public function testGetUnknownItemIs404(): void
     {
         $client = static::createClient();

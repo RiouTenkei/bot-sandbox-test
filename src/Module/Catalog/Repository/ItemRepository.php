@@ -19,6 +19,9 @@ final class ItemRepository
         'Plane', 'Quill', 'Rasp', 'Saw', 'Trowel', 'Umbrella', 'Vice', 'Wrench',
     ];
 
+    private const WORKSHOP_NAMES = ['Anvil', 'Bellows', 'Chisel', 'Drill', 'Easel', 'File', 'Gouge', 'Hammer'];
+    private const WRITING_NAMES = ['Inkwell', 'Quill'];
+
     /** @var list<Item>|null */
     private ?array $items = null;
 
@@ -77,13 +80,30 @@ final class ItemRepository
         return null;
     }
 
+    /**
+     * @return list<array{category: Category, itemCount: int}>
+     */
+    public function categorySummaries(): array
+    {
+        $map = [];
+        foreach ($this->all() as $item) {
+            $id = $item->category->id;
+            $map[$id] ??= ['category' => $item->category, 'itemCount' => 0];
+            $map[$id]['itemCount']++;
+        }
+
+        usort($map, static fn (array $a, array $b): int => $a['category']->name <=> $b['category']->name);
+
+        return array_values($map);
+    }
+
     private function categoryFor(string $name): Category
     {
-        if ($name >= 'Anvil' && $name <= 'Hammer') {
+        if (\in_array($name, self::WORKSHOP_NAMES, true)) {
             return new Category('workshop', 'Workshop');
         }
 
-        if ('Inkwell' === $name || 'Quill' === $name) {
+        if (\in_array($name, self::WRITING_NAMES, true)) {
             return new Category('writing', 'Writing');
         }
 
