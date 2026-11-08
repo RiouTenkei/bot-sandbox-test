@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Module\Catalog\Http\View;
 
 use App\Module\Catalog\Domain\Item;
+use App\Module\Catalog\Domain\Page;
 
 final class ItemView
 {
@@ -32,5 +33,16 @@ final class ItemView
         }
 
         return $out;
+    }
+
+    /** @return array{items: list<array<string, mixed>>, page: int, perPage: int, total: int} */
+    public static function page(Page $page): array
+    {
+        return [
+            'items' => self::many($page->items),
+            'page' => $page->page,
+            'perPage' => $page->perPage,
+            'total' => $page->total,
+        ];
     }
 }

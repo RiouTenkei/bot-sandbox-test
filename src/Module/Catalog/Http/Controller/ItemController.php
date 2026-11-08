@@ -13,6 +13,9 @@ use Symfony\Component\Routing\Attribute\Route;
 
 final class ItemController extends AbstractController
 {
+    private const int DEFAULT_PER_PAGE = 10;
+    private const int MAX_PER_PAGE = 50;
+
     public function __construct(private readonly ItemRepository $items)
     {
     }
@@ -20,6 +23,19 @@ final class ItemController extends AbstractController
     #[Route('/api/items', methods: ['GET'])]
     public function list(Request $request): JsonResponse
     {
+        $page = (int) $request->query->get('page', 1);
+        if ($page < 1) {
+            $page = 1;
+        }
+
+        $perPage = (int) $request->query->get('perPage', self::DEFAULT_PER_PAGE);
+        if ($perPage < 1) {
+            $perPage = self::DEFAULT_PER_PAGE;
+        }
+        if ($perPage > self::MAX_PER_PAGE) {
+            $perPage = self::MAX_PER_PAGE;
+        }
+
         $maxPrice = $request->query->get('maxPrice');
 
         if (null !== $maxPrice && '' !== $maxPrice) {
@@ -28,11 +44,12 @@ final class ItemController extends AbstractController
             }
 
             $maxPriceMinor = (int) round((float) $maxPrice * 100);
+            $items = $this->items->allByMaxPrice($maxPriceMinor);
 
-            return new JsonResponse(ItemView::many($this->items->allByMaxPrice($maxPriceMinor)));
+            return new JsonResponse(ItemView::page($this->items->paginate($page, $perPage, $items)));
         }
 
-        return new JsonResponse(ItemView::many($this->items->all()));
+        return new JsonResponse(ItemView::page($this->items->paginate($page, $perPage)));
     }
 
     #[Route('/api/items/count', methods: ['GET'], priority: 10)]
