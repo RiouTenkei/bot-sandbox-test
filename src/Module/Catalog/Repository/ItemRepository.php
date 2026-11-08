@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Module\Catalog\Repository;
 
+use App\Module\Catalog\Domain\Category;
 use App\Module\Catalog\Domain\Item;
 use App\Module\Catalog\Domain\Page;
 
@@ -18,6 +19,14 @@ final class ItemRepository
         'Plane', 'Quill', 'Rasp', 'Saw', 'Trowel', 'Umbrella', 'Vice', 'Wrench',
     ];
 
+    private const WORKSHOP_NAMES = [
+        'Anvil', 'Bellows', 'Chisel', 'Drill', 'Easel', 'File', 'Gouge', 'Hammer',
+    ];
+
+    private const WRITING_NAMES = [
+        'Inkwell', 'Quill',
+    ];
+
     /** @var list<Item>|null */
     private ?array $items = null;
 
@@ -30,6 +39,7 @@ final class ItemRepository
                 $this->items[] = new Item(
                     id: sprintf('item-%02d', $i + 1),
                     name: $name,
+                    category: $this->resolveCategory($name),
                     priceMinor: 500 + $i * 125,
                     currency: 'GBP',
                     createdAt: new \DateTimeImmutable(sprintf('2026-01-%02dT09:00:00+00:00', $i + 1)),
@@ -73,5 +83,46 @@ final class ItemRepository
         }
 
         return null;
+    }
+
+    /** @return array<int, array{id: string, name: string, itemCount: int}> */
+    public function categories(): array
+    {
+        $counts = ['workshop' => 0, 'writing' => 0, 'garden' => 0];
+        foreach ($this->all() as $item) {
+            ++$counts[$item->category->id];
+        }
+
+        $categories = [
+            Category::garden(),
+            Category::workshop(),
+            Category::writing(),
+        ];
+
+        $out = [];
+        foreach ($categories as $category) {
+            $out[] = [
+                'id' => $category->id,
+                'name' => $category->name,
+                'itemCount' => $counts[$category->id],
+            ];
+        }
+
+        usort($out, static fn (array $a, array $b): int => $a['name'] <=> $b['name']);
+
+        return $out;
+    }
+
+    private function resolveCategory(string $name): Category
+    {
+        if (\in_array($name, self::WORKSHOP_NAMES, true)) {
+            return Category::workshop();
+        }
+
+        if (\in_array($name, self::WRITING_NAMES, true)) {
+            return Category::writing();
+        }
+
+        return Category::garden();
     }
 }
