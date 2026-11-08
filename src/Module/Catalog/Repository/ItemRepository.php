@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Module\Catalog\Repository;
 
+use App\Module\Catalog\Domain\Category;
 use App\Module\Catalog\Domain\Item;
 use App\Module\Catalog\Domain\Page;
 
@@ -33,6 +34,7 @@ final class ItemRepository
                     priceMinor: 500 + $i * 125,
                     currency: 'GBP',
                     createdAt: new \DateTimeImmutable(sprintf('2026-01-%02dT09:00:00+00:00', $i + 1)),
+                    category: $this->categoryFor($name),
                 );
             }
         }
@@ -73,5 +75,18 @@ final class ItemRepository
         }
 
         return null;
+    }
+
+    private function categoryFor(string $name): Category
+    {
+        if ($name >= 'Anvil' && $name <= 'Hammer') {
+            return new Category('workshop', 'Workshop');
+        }
+
+        if ('Inkwell' === $name || 'Quill' === $name) {
+            return new Category('writing', 'Writing');
+        }
+
+        return new Category('garden', 'Garden');
     }
 }

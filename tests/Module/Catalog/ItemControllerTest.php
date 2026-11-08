@@ -20,7 +20,7 @@ final class ItemControllerTest extends WebTestCase
         self::assertSame(1, $body['page']);
         self::assertSame(10, $body['perPage']);
         self::assertSame(23, $body['total']);
-        self::assertSame(['id' => 'item-01', 'name' => 'Anvil', 'price' => ['amount' => 5, 'currency' => 'GBP'], 'createdAt' => '2026-01-01T09:00:00+00:00'], $body['items'][0]);
+        self::assertSame(['id' => 'item-01', 'name' => 'Anvil', 'price' => ['amount' => 5, 'currency' => 'GBP'], 'category' => ['id' => 'workshop', 'name' => 'Workshop'], 'createdAt' => '2026-01-01T09:00:00+00:00'], $body['items'][0]);
     }
 
     public function testListWithPageThreeAndPerPageTenReturnsThreeItems(): void
@@ -35,7 +35,7 @@ final class ItemControllerTest extends WebTestCase
         self::assertSame(3, $body['page']);
         self::assertSame(10, $body['perPage']);
         self::assertSame(23, $body['total']);
-        self::assertSame(['id' => 'item-21', 'name' => 'Umbrella', 'price' => ['amount' => 30, 'currency' => 'GBP'], 'createdAt' => '2026-01-21T09:00:00+00:00'], $body['items'][0]);
+        self::assertSame(['id' => 'item-21', 'name' => 'Umbrella', 'price' => ['amount' => 30, 'currency' => 'GBP'], 'category' => ['id' => 'garden', 'name' => 'Garden'], 'createdAt' => '2026-01-21T09:00:00+00:00'], $body['items'][0]);
     }
 
     public function testListCapsPerPageAtFifty(): void
@@ -71,6 +71,7 @@ final class ItemControllerTest extends WebTestCase
         $item = json_decode((string) $client->getResponse()->getContent(), true);
         self::assertSame('Hammer', $item['name']);
         self::assertSame(13.75, $item['price']['amount']);
+        self::assertSame(['id' => 'workshop', 'name' => 'Workshop'], $item['category']);
     }
 
     public function testGetUnknownItemIs404(): void
@@ -100,6 +101,7 @@ final class ItemControllerTest extends WebTestCase
         self::assertResponseIsSuccessful();
         $item = json_decode((string) $client->getResponse()->getContent(), true);
         self::assertSame('Anvil', $item['name']);
+        self::assertSame(['id' => 'workshop', 'name' => 'Workshop'], $item['category']);
     }
 
     public function testListFiltersByMaxPrice(): void
@@ -111,7 +113,7 @@ final class ItemControllerTest extends WebTestCase
         $body = json_decode((string) $client->getResponse()->getContent(), true);
         self::assertCount(1, $body['items']);
         self::assertSame(1, $body['total']);
-        self::assertSame(['id' => 'item-01', 'name' => 'Anvil', 'price' => ['amount' => 5, 'currency' => 'GBP'], 'createdAt' => '2026-01-01T09:00:00+00:00'], $body['items'][0]);
+        self::assertSame(['id' => 'item-01', 'name' => 'Anvil', 'price' => ['amount' => 5, 'currency' => 'GBP'], 'category' => ['id' => 'workshop', 'name' => 'Workshop'], 'createdAt' => '2026-01-01T09:00:00+00:00'], $body['items'][0]);
     }
 
     public function testListWithMaxPriceZeroReturnsEmpty(): void
