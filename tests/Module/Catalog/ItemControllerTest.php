@@ -37,4 +37,14 @@ final class ItemControllerTest extends WebTestCase
 
         self::assertResponseStatusCodeSame(404);
     }
+
+    public function testCountReturnsNumberOfItems(): void
+    {
+        $client = static::createClient();
+        $client->request('GET', '/api/items/count');
+
+        self::assertResponseIsSuccessful();
+        $body = json_decode((string) $client->getResponse()->getContent(), true);
+        self::assertSame(['count' => 23], $body);
+    }
 }

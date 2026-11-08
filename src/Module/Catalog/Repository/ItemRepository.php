@@ -49,4 +49,9 @@ final class ItemRepository
 
         return null;
     }
+
+    public function count(): int
+    {
+        return count($this->all());
+    }
 }
