@@ -19,6 +19,39 @@ final class ItemControllerTest extends WebTestCase
         self::assertSame(['id' => 'item-01', 'name' => 'Anvil', 'price' => ['amount' => 5, 'currency' => 'GBP'], 'createdAt' => '2026-01-01T09:00:00+00:00'], $items[0]);
     }
 
+    /** maxPrice filters the catalogue to items priced at or below the given pounds. */
+    public function testListWithMaxPriceFiltersItems(): void
+    {
+        $client = static::createClient();
+        $client->request('GET', '/api/items?maxPrice=6.00');
+
+        self::assertResponseIsSuccessful();
+        $items = json_decode((string) $client->getResponse()->getContent(), true);
+        self::assertCount(1, $items);
+        self::assertSame('item-01', $items[0]['id']);
+    }
+
+    /** A maxPrice of zero excludes every item because all prices are positive. */
+    public function testListWithMaxPriceZeroReturnsEmpty(): void
+    {
+        $client = static::createClient();
+        $client->request('GET', '/api/items?maxPrice=0');
+
+        self::assertResponseIsSuccessful();
+        self::assertSame([], json_decode((string) $client->getResponse()->getContent(), true));
+    }
+
+    /** Malformed or negative maxPrice values are rejected before filtering. */
+    public function testListWithInvalidMaxPriceReturns400(): void
+    {
+        $client = static::createClient();
+
+        foreach (['abc', '-1'] as $value) {
+            $client->request('GET', '/api/items?maxPrice=' . $value);
+            self::assertResponseStatusCodeSame(400);
+        }
+    }
+
     public function testGetReturnsOneItem(): void
     {
         $client = static::createClient();

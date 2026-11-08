@@ -21,7 +21,21 @@ final class ItemRepository
     private ?array $items = null;
 
     /** @return list<Item> */
-    public function all(): array
+    public function all(?int $maxPriceMinor = null): array
+    {
+        $items = $this->loadItems();
+        if (null === $maxPriceMinor) {
+            return $items;
+        }
+
+        return array_values(array_filter(
+            $items,
+            static fn (Item $item): bool => $item->priceMinor <= $maxPriceMinor,
+        ));
+    }
+
+    /** @return list<Item> */
+    private function loadItems(): array
     {
         if (null === $this->items) {
             $this->items = [];
@@ -41,7 +55,7 @@ final class ItemRepository
 
     public function find(string $id): ?Item
     {
-        foreach ($this->all() as $item) {
+        foreach ($this->loadItems() as $item) {
             if ($item->id === $id) {
                 return $item;
             }
