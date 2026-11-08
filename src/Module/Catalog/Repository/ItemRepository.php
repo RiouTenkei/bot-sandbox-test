@@ -80,6 +80,14 @@ final class ItemRepository
         return null;
     }
 
+    /**
+     * Finds the cheapest item, breaking ties by the lowest id.
+     *
+     * This repository is backed by a fixed in-memory catalogue, so a single
+     * linear scan is acceptable and the result is memoised for subsequent
+     * calls. If this catalogue is ever moved to a real database, replace this
+     * in-PHP scan with a query that orders by price and id and returns one row.
+     */
     public function findCheapest(): ?Item
     {
         if ($this->cheapestLoaded) {
