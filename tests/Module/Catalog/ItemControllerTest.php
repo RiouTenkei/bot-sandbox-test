@@ -36,6 +36,8 @@ final class ItemControllerTest extends WebTestCase
         $client->request('GET', '/api/items/nope');
 
         self::assertResponseStatusCodeSame(404);
+        self::assertResponseHeaderSame('content-type', 'application/json');
+        self::assertSame(['error' => 'Item not found'], json_decode((string) $client->getResponse()->getContent(), true));
     }
 
     public function testCountReturnsTotal(): void
