@@ -39,6 +39,11 @@ final class ItemRepository
         return $this->items;
     }
 
+    public function count(): int
+    {
+        return count($this->all());
+    }
+
     public function find(string $id): ?Item
     {
         foreach ($this->all() as $item) {
