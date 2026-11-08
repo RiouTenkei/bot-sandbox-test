@@ -40,16 +40,27 @@ final class ItemRepository
         return $this->items;
     }
 
-    public function paginate(int $page, int $perPage): Page
+    public function paginate(int $page, int $perPage, ?array $items = null): Page
     {
-        $all = $this->all();
+        $items ??= $this->all();
         $offset = ($page - 1) * $perPage;
 
         return new Page(
-            items: array_slice($all, $offset, $perPage),
+            items: array_slice($items, $offset, $perPage),
             page: $page,
             perPage: $perPage,
-            total: count($all),
+            total: count($items),
+        );
+    }
+
+    /** @return list<Item> */
+    public function allByMaxPrice(int $maxPriceMinor): array
+    {
+        return array_values(
+            array_filter(
+                $this->all(),
+                static fn (Item $item): bool => $item->priceMinor <= $maxPriceMinor,
+            ),
         );
     }
 

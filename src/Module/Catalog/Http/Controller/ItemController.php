@@ -36,13 +36,36 @@ final class ItemController extends AbstractController
             $perPage = self::MAX_PER_PAGE;
         }
 
+        $maxPrice = $request->query->get('maxPrice');
+
+        if (null !== $maxPrice && '' !== $maxPrice) {
+            if (!is_numeric($maxPrice) || (float) $maxPrice < 0) {
+                return new JsonResponse(['error' => 'maxPrice must be a non-negative number'], 400);
+            }
+
+            $maxPriceMinor = (int) round((float) $maxPrice * 100);
+            $items = $this->items->allByMaxPrice($maxPriceMinor);
+
+            return new JsonResponse(ItemView::page($this->items->paginate($page, $perPage, $items)));
+        }
+
         return new JsonResponse(ItemView::page($this->items->paginate($page, $perPage)));
+    }
+
+    #[Route('/api/items/count', methods: ['GET'], priority: 10)]
+    public function count(): JsonResponse
+    {
+        return new JsonResponse(['count' => count($this->items->all())]);
     }
 
     #[Route('/api/items/{id}', methods: ['GET'])]
     public function get(string $id): JsonResponse
     {
-        $item = $this->items->find($id) ?? throw $this->createNotFoundException();
+        $item = $this->items->find($id);
+
+        if (null === $item) {
+            return new JsonResponse(['error' => 'Item not found'], 404);
+        }
 
         return new JsonResponse(ItemView::one($item));
     }
