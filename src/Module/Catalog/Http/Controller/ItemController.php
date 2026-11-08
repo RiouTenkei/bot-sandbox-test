@@ -8,6 +8,8 @@ use App\Module\Catalog\Http\View\ItemView;
 use App\Module\Catalog\Repository\ItemRepository;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
+use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\HttpKernel\Exception\BadRequestHttpException;
 use Symfony\Component\Routing\Attribute\Route;
 
 final class ItemController extends AbstractController
@@ -17,9 +19,20 @@ final class ItemController extends AbstractController
     }
 
     #[Route('/api/items', methods: ['GET'])]
-    public function list(): JsonResponse
+    public function list(Request $request): JsonResponse
     {
-        return new JsonResponse(ItemView::many($this->items->all()));
+        $maxPrice = $request->query->get('maxPrice');
+        if (null === $maxPrice) {
+            return new JsonResponse(ItemView::many($this->items->all()));
+        }
+
+        if (!is_numeric($maxPrice) || (float) $maxPrice < 0) {
+            throw new BadRequestHttpException('maxPrice must be a non-negative number.');
+        }
+
+        $maxPriceMinor = (int) round(((float) $maxPrice) * 100);
+
+        return new JsonResponse(ItemView::many($this->items->findByMaxPrice($maxPriceMinor)));
     }
 
     #[Route('/api/items/count', methods: ['GET'], priority: 10)]

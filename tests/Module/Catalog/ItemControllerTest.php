@@ -56,4 +56,43 @@ final class ItemControllerTest extends WebTestCase
         $item = json_decode((string) $client->getResponse()->getContent(), true);
         self::assertSame('Anvil', $item['name']);
     }
+
+    public function testListWithMaxPriceFiltersItems(): void
+    {
+        $client = static::createClient();
+        $client->request('GET', '/api/items?maxPrice=6');
+
+        self::assertResponseIsSuccessful();
+        $items = json_decode((string) $client->getResponse()->getContent(), true);
+        self::assertCount(1, $items);
+        self::assertSame('item-01', $items[0]['id']);
+        self::assertSame(5, $items[0]['price']['amount']);
+    }
+
+    public function testListWithMaxPriceZeroReturnsEmptyList(): void
+    {
+        $client = static::createClient();
+        $client->request('GET', '/api/items?maxPrice=0');
+
+        self::assertResponseIsSuccessful();
+        self::assertSame([], json_decode((string) $client->getResponse()->getContent(), true));
+    }
+
+    public function testListWithNonNumericMaxPriceReturns400(): void
+    {
+        $client = static::createClient();
+        $client->request('GET', '/api/items?maxPrice=abc');
+
+        self::assertResponseStatusCodeSame(400);
+        self::assertStringContainsString('maxPrice must be a non-negative number', (string) $client->getResponse()->getContent());
+    }
+
+    public function testListWithNegativeMaxPriceReturns400(): void
+    {
+        $client = static::createClient();
+        $client->request('GET', '/api/items?maxPrice=-1');
+
+        self::assertResponseStatusCodeSame(400);
+        self::assertStringContainsString('maxPrice must be a non-negative number', (string) $client->getResponse()->getContent());
+    }
 }
