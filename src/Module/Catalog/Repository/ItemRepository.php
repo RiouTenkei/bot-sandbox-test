@@ -22,6 +22,9 @@ final class ItemRepository
     /** @var list<Item>|null */
     private ?array $items = null;
 
+    private ?Item $cheapest = null;
+    private bool $cheapestLoaded = false;
+
     /** @return list<Item> */
     public function all(): array
     {
@@ -75,6 +78,38 @@ final class ItemRepository
         }
 
         return null;
+    }
+
+    /**
+     * Finds the cheapest item, breaking ties by the lowest id.
+     *
+     * This repository is backed by a fixed in-memory catalogue, so a single
+     * linear scan is acceptable and the result is memoised for subsequent
+     * calls. If this catalogue is ever moved to a real database, replace this
+     * in-PHP scan with a query that orders by price and id and returns one row.
+     */
+    public function findCheapest(): ?Item
+    {
+        if ($this->cheapestLoaded) {
+            return $this->cheapest;
+        }
+
+        $cheapest = null;
+        foreach ($this->all() as $item) {
+            if (null === $cheapest || $item->priceMinor < $cheapest->priceMinor) {
+                $cheapest = $item;
+                continue;
+            }
+
+            if ($item->priceMinor === $cheapest->priceMinor && $item->id < $cheapest->id) {
+                $cheapest = $item;
+            }
+        }
+
+        $this->cheapest = $cheapest;
+        $this->cheapestLoaded = true;
+
+        return $cheapest;
     }
 
     private function categoryFor(int $index, string $name): Category
