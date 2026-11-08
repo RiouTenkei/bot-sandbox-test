@@ -22,6 +22,12 @@ final class ItemController extends AbstractController
         return new JsonResponse(ItemView::many($this->items->all()));
     }
 
+    #[Route('/api/items/count', methods: ['GET'], priority: 10)]
+    public function count(): JsonResponse
+    {
+        return new JsonResponse(['count' => count($this->items->all())]);
+    }
+
     #[Route('/api/items/{id}', methods: ['GET'])]
     public function get(string $id): JsonResponse
     {
