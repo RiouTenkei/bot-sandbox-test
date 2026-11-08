@@ -37,6 +37,7 @@ final class ItemController extends AbstractController
         }
 
         $maxPrice = $request->query->get('maxPrice');
+        $maxPriceMinor = null;
 
         if (null !== $maxPrice && '' !== $maxPrice) {
             if (!is_numeric($maxPrice) || (float) $maxPrice < 0) {
@@ -44,18 +45,15 @@ final class ItemController extends AbstractController
             }
 
             $maxPriceMinor = (int) round((float) $maxPrice * 100);
-            $items = $this->items->allByMaxPrice($maxPriceMinor);
-
-            return new JsonResponse(ItemView::page($this->items->paginate($page, $perPage, $items)));
         }
 
-        return new JsonResponse(ItemView::page($this->items->paginate($page, $perPage)));
+        return new JsonResponse(ItemView::page($this->items->paginate($page, $perPage, $maxPriceMinor)));
     }
 
     #[Route('/api/items/count', methods: ['GET'], priority: 10)]
     public function count(): JsonResponse
     {
-        return new JsonResponse(['count' => count($this->items->all())]);
+        return new JsonResponse(['count' => $this->items->totalCount()]);
     }
 
     #[Route('/api/items/cheapest', methods: ['GET'], priority: 10)]

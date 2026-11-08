@@ -8,6 +8,7 @@ use App\Module\Catalog\Domain\Category;
 use App\Module\Catalog\Domain\Item;
 use App\Module\Catalog\Domain\Page;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
+use Doctrine\ORM\QueryBuilder;
 use Doctrine\Persistence\ManagerRegistry;
 
 /**
@@ -20,26 +21,18 @@ final class ItemRepository extends ServiceEntityRepository
         parent::__construct($registry, Item::class);
     }
 
-    public function paginate(int $page, int $perPage, ?array $items = null): Page
+    /**
+     * Counts, filters by maximum price (minor units, converted by the caller),
+     * sorts by id and paginates, entirely in SQL.
+     */
+    public function paginate(int $page, int $perPage, ?int $maxPriceMinor = null): Page
     {
-        if (null !== $items) {
-            $total = count($items);
-            $offset = ($page - 1) * $perPage;
-
-            return new Page(
-                items: array_slice($items, $offset, $perPage),
-                page: $page,
-                perPage: $perPage,
-                total: $total,
-            );
-        }
-
-        $total = (int) $this->createQueryBuilder('i')
+        $total = (int) $this->filteredQueryBuilder($maxPriceMinor)
             ->select('COUNT(i.id)')
             ->getQuery()
             ->getSingleScalarResult();
 
-        $items = $this->createQueryBuilder('i')
+        $items = $this->filteredQueryBuilder($maxPriceMinor)
             ->orderBy('i.id', 'ASC')
             ->setFirstResult(($page - 1) * $perPage)
             ->setMaxResults($perPage)
@@ -54,24 +47,12 @@ final class ItemRepository extends ServiceEntityRepository
         );
     }
 
-    /** @return list<Item> */
-    public function all(): array
+    public function totalCount(): int
     {
-        return $this->createQueryBuilder('i')
-            ->orderBy('i.id', 'ASC')
+        return (int) $this->createQueryBuilder('i')
+            ->select('COUNT(i.id)')
             ->getQuery()
-            ->getResult();
-    }
-
-    /** @return list<Item> */
-    public function allByMaxPrice(int $maxPriceMinor): array
-    {
-        return $this->createQueryBuilder('i')
-            ->where('i.priceMinor <= :maxPrice')
-            ->setParameter('maxPrice', $maxPriceMinor)
-            ->orderBy('i.id', 'ASC')
-            ->getQuery()
-            ->getResult();
+            ->getSingleScalarResult();
     }
 
     public function findOne(string $id): ?Item
@@ -114,5 +95,18 @@ final class ItemRepository extends ServiceEntityRepository
             ],
             $rows,
         );
+    }
+
+    private function filteredQueryBuilder(?int $maxPriceMinor): QueryBuilder
+    {
+        $queryBuilder = $this->createQueryBuilder('i');
+
+        if (null !== $maxPriceMinor) {
+            $queryBuilder
+                ->where('i.priceMinor <= :maxPrice')
+                ->setParameter('maxPrice', $maxPriceMinor);
+        }
+
+        return $queryBuilder;
     }
 }
