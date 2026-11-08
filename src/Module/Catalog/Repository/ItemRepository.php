@@ -7,6 +7,7 @@ namespace App\Module\Catalog\Repository;
 use App\Module\Catalog\Domain\Category;
 use App\Module\Catalog\Domain\Item;
 use App\Module\Catalog\Domain\Page;
+use App\Module\Catalog\Domain\Supplier;
 
 /**
  * Fixed in-memory catalogue, so the sandbox needs no database.
@@ -17,6 +18,33 @@ final class ItemRepository
         'Anvil', 'Bellows', 'Chisel', 'Drill', 'Easel', 'File', 'Gouge', 'Hammer',
         'Inkwell', 'Jigsaw', 'Kettle', 'Ladder', 'Mallet', 'Needle', 'Oilcan',
         'Plane', 'Quill', 'Rasp', 'Saw', 'Trowel', 'Umbrella', 'Vice', 'Wrench',
+    ];
+
+    /** @var list<array{name: string, email: string, phone: string}> */
+    private const SUPPLIERS = [
+        ['name' => 'Able Tools Ltd', 'email' => 'able@example.com', 'phone' => '+44 20 7946 0001'],
+        ['name' => 'Baker Supplies Co', 'email' => 'baker@example.com', 'phone' => '+44 20 7946 0002'],
+        ['name' => 'Charlie Hardware Ltd', 'email' => 'charlie@example.com', 'phone' => '+44 20 7946 0003'],
+        ['name' => 'Delta Equipment Co', 'email' => 'delta@example.com', 'phone' => '+44 20 7946 0004'],
+        ['name' => 'Echo Industrial Ltd', 'email' => 'echo@example.com', 'phone' => '+44 20 7946 0005'],
+        ['name' => 'Foxtrot Tools Co', 'email' => 'foxtrot@example.com', 'phone' => '+44 20 7946 0006'],
+        ['name' => 'Golf Gear Ltd', 'email' => 'golf@example.com', 'phone' => '+44 20 7946 0007'],
+        ['name' => 'Hotel Supplies Co', 'email' => 'hotel@example.com', 'phone' => '+44 20 7946 0008'],
+        ['name' => 'India Hardware Ltd', 'email' => 'india@example.com', 'phone' => '+44 20 7946 0009'],
+        ['name' => 'Juliett Tools Co', 'email' => 'juliett@example.com', 'phone' => '+44 20 7946 0010'],
+        ['name' => 'Kilo Equipment Ltd', 'email' => 'kilo@example.com', 'phone' => '+44 20 7946 0011'],
+        ['name' => 'Lima Supplies Co', 'email' => 'lima@example.com', 'phone' => '+44 20 7946 0012'],
+        ['name' => 'Mike Tools Ltd', 'email' => 'mike@example.com', 'phone' => '+44 20 7946 0013'],
+        ['name' => 'November Hardware Co', 'email' => 'november@example.com', 'phone' => '+44 20 7946 0014'],
+        ['name' => 'Oscar Gear Ltd', 'email' => 'oscar@example.com', 'phone' => '+44 20 7946 0015'],
+        ['name' => 'Papa Tools Co', 'email' => 'papa@example.com', 'phone' => '+44 20 7946 0016'],
+        ['name' => 'Quebec Equipment Ltd', 'email' => 'quebec@example.com', 'phone' => '+44 20 7946 0017'],
+        ['name' => 'Romeo Supplies Co', 'email' => 'romeo@example.com', 'phone' => '+44 20 7946 0018'],
+        ['name' => 'Sierra Tools Ltd', 'email' => 'sierra@example.com', 'phone' => '+44 20 7946 0019'],
+        ['name' => 'Tango Hardware Co', 'email' => 'tango@example.com', 'phone' => '+44 20 7946 0020'],
+        ['name' => 'Uniform Gear Ltd', 'email' => 'uniform@example.com', 'phone' => '+44 20 7946 0021'],
+        ['name' => 'Victor Tools Co', 'email' => 'victor@example.com', 'phone' => '+44 20 7946 0022'],
+        ['name' => 'Whiskey Supplies Ltd', 'email' => 'whiskey@example.com', 'phone' => '+44 20 7946 0023'],
     ];
 
     /** @var list<Item>|null */
@@ -35,6 +63,7 @@ final class ItemRepository
                     currency: 'GBP',
                     createdAt: new \DateTimeImmutable(sprintf('2026-01-%02dT09:00:00+00:00', $i + 1)),
                     category: $this->categoryFor($i, $name),
+                    supplier: $this->supplierFor($i),
                 );
             }
         }
@@ -88,6 +117,13 @@ final class ItemRepository
         }
 
         return Category::garden();
+    }
+
+    private function supplierFor(int $index): Supplier
+    {
+        $data = self::SUPPLIERS[$index];
+
+        return new Supplier($data['name'], $data['email'], $data['phone']);
     }
 
     /**

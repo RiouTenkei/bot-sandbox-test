@@ -27,6 +27,7 @@ final class ItemControllerTest extends WebTestCase
                 'price' => ['amount' => 5, 'currency' => 'GBP'],
                 'createdAt' => '2026-01-01T09:00:00+00:00',
                 'category' => ['id' => 'workshop', 'name' => 'Workshop'],
+                'supplier' => ['name' => 'Able Tools Ltd', 'email' => 'able@example.com', 'phone' => '+44 20 7946 0001'],
             ],
             $body['items'][0],
         );
@@ -51,6 +52,7 @@ final class ItemControllerTest extends WebTestCase
                 'price' => ['amount' => 30, 'currency' => 'GBP'],
                 'createdAt' => '2026-01-21T09:00:00+00:00',
                 'category' => ['id' => 'garden', 'name' => 'Garden'],
+                'supplier' => ['name' => 'Uniform Gear Ltd', 'email' => 'uniform@example.com', 'phone' => '+44 20 7946 0021'],
             ],
             $body['items'][0],
         );
@@ -90,6 +92,10 @@ final class ItemControllerTest extends WebTestCase
         self::assertSame('Hammer', $item['name']);
         self::assertSame(13.75, $item['price']['amount']);
         self::assertSame(['id' => 'workshop', 'name' => 'Workshop'], $item['category']);
+        self::assertSame(
+            ['name' => 'Hotel Supplies Co', 'email' => 'hotel@example.com', 'phone' => '+44 20 7946 0008'],
+            $item['supplier'],
+        );
     }
 
     public function testGetUnknownItemIs404(): void
@@ -120,6 +126,10 @@ final class ItemControllerTest extends WebTestCase
         $item = json_decode((string) $client->getResponse()->getContent(), true);
         self::assertSame('Anvil', $item['name']);
         self::assertSame(['id' => 'workshop', 'name' => 'Workshop'], $item['category']);
+        self::assertSame(
+            ['name' => 'Able Tools Ltd', 'email' => 'able@example.com', 'phone' => '+44 20 7946 0001'],
+            $item['supplier'],
+        );
     }
 
     public function testListFiltersByMaxPrice(): void
@@ -138,6 +148,7 @@ final class ItemControllerTest extends WebTestCase
                 'price' => ['amount' => 5, 'currency' => 'GBP'],
                 'createdAt' => '2026-01-01T09:00:00+00:00',
                 'category' => ['id' => 'workshop', 'name' => 'Workshop'],
+                'supplier' => ['name' => 'Able Tools Ltd', 'email' => 'able@example.com', 'phone' => '+44 20 7946 0001'],
             ],
             $body['items'][0],
         );
@@ -164,6 +175,23 @@ final class ItemControllerTest extends WebTestCase
             self::assertResponseStatusCodeSame(400);
             $body = json_decode((string) $client->getResponse()->getContent(), true);
             self::assertSame('maxPrice must be a non-negative number', $body['error']);
+        }
+    }
+
+    public function testEveryItemHasASupplier(): void
+    {
+        $client = static::createClient();
+        $client->request('GET', '/api/items?perPage=50');
+
+        self::assertResponseIsSuccessful();
+        $body = json_decode((string) $client->getResponse()->getContent(), true);
+
+        self::assertCount(23, $body['items']);
+        foreach ($body['items'] as $item) {
+            self::assertArrayHasKey('supplier', $item);
+            self::assertNotSame('', $item['supplier']['name']);
+            self::assertNotSame('', $item['supplier']['email']);
+            self::assertNotSame('', $item['supplier']['phone']);
         }
     }
 }
