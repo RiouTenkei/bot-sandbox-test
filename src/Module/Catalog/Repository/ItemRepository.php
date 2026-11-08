@@ -34,7 +34,7 @@ final class ItemRepository
                     priceMinor: 500 + $i * 125,
                     currency: 'GBP',
                     createdAt: new \DateTimeImmutable(sprintf('2026-01-%02dT09:00:00+00:00', $i + 1)),
-                    category: Category::fromName($name),
+                    category: Category::forItemName($name),
                 );
             }
         }

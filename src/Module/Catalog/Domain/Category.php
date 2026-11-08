@@ -24,7 +24,7 @@ enum Category: string
         };
     }
 
-    public static function fromName(string $name): self
+    public static function forItemName(string $name): self
     {
         return match ($name) {
             'Anvil', 'Bellows', 'Chisel', 'Drill', 'Easel', 'File', 'Gouge', 'Hammer' => self::WORKSHOP,

@@ -24,7 +24,7 @@ final class ItemView
     /**
      * @param iterable<Item> $items
      *
-     * @return list<array<string, mixed>>
+     * @return list<array{id: string, name: string, price: array{amount: float, currency: string}, category: array{id: string, name: string}, createdAt: string}>
      */
     public static function many(iterable $items): array
     {
@@ -36,7 +36,7 @@ final class ItemView
         return $out;
     }
 
-    /** @return array{items: list<array<string, mixed>>, page: int, perPage: int, total: int} */
+    /** @return array{items: list<array{id: string, name: string, price: array{amount: float, currency: string}, category: array{id: string, name: string}, createdAt: string}>, page: int, perPage: int, total: int} */
     public static function page(Page $page): array
     {
         return [

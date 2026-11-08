@@ -71,6 +71,7 @@ final class ItemControllerTest extends WebTestCase
         $item = json_decode((string) $client->getResponse()->getContent(), true);
         self::assertSame('Hammer', $item['name']);
         self::assertSame(13.75, $item['price']['amount']);
+        self::assertSame(['id' => 'workshop', 'name' => 'Workshop'], $item['category']);
     }
 
     public function testGetUnknownItemIs404(): void
@@ -100,6 +101,7 @@ final class ItemControllerTest extends WebTestCase
         self::assertResponseIsSuccessful();
         $item = json_decode((string) $client->getResponse()->getContent(), true);
         self::assertSame('Anvil', $item['name']);
+        self::assertSame(['id' => 'workshop', 'name' => 'Workshop'], $item['category']);
     }
 
     public function testListFiltersByMaxPrice(): void
