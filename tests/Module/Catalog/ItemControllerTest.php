@@ -31,6 +31,22 @@ final class ItemControllerTest extends WebTestCase
         self::assertSame(5, $items[0]['price']['amount']);
     }
 
+    /**
+     * Proves the filter is inclusive: an item priced exactly at maxPrice is returned.
+     * If the repository used < instead of <= this test would fail.
+     */
+    public function testListFilterIncludesExactMaxPrice(): void
+    {
+        $client = static::createClient();
+        $client->request('GET', '/api/items?maxPrice=5');
+
+        self::assertResponseIsSuccessful();
+        $items = json_decode((string) $client->getResponse()->getContent(), true);
+        self::assertCount(1, $items);
+        self::assertSame('Anvil', $items[0]['name']);
+        self::assertSame(5, $items[0]['price']['amount']);
+    }
+
     public function testListMaxPriceZeroReturnsEmptyList(): void
     {
         $client = static::createClient();
