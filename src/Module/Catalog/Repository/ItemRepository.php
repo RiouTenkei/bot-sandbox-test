@@ -49,4 +49,17 @@ final class ItemRepository
 
         return null;
     }
+
+    /** @return list<Item> */
+    public function findByMaxPrice(int $maxPriceMinor): array
+    {
+        $items = [];
+        foreach ($this->all() as $item) {
+            if ($item->priceMinor <= $maxPriceMinor) {
+                $items[] = $item;
+            }
+        }
+
+        return $items;
+    }
 }
