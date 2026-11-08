@@ -18,8 +18,8 @@ final class CategoryView
         $out = [];
         foreach ($categories as ['category' => $category, 'count' => $count]) {
             $out[] = [
-                'id' => $category->id,
-                'name' => $category->name,
+                'id' => $category->id(),
+                'name' => $category->name(),
                 'itemCount' => $count,
             ];
         }

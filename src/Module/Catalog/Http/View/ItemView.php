@@ -13,11 +13,11 @@ final class ItemView
     public static function one(Item $item): array
     {
         return [
-            'id' => $item->id,
-            'name' => $item->name,
-            'price' => ['amount' => $item->priceMinor / 100, 'currency' => $item->currency],
-            'createdAt' => $item->createdAt->format(\DATE_ATOM),
-            'category' => ['id' => $item->category->id, 'name' => $item->category->name],
+            'id' => $item->id(),
+            'name' => $item->name(),
+            'price' => ['amount' => $item->priceMinor() / 100, 'currency' => $item->currency()],
+            'createdAt' => $item->createdAt()->format(\DATE_ATOM),
+            'category' => ['id' => $item->category()->id(), 'name' => $item->category()->name()],
         ];
     }
 

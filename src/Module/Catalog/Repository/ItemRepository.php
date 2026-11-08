@@ -7,122 +7,71 @@ namespace App\Module\Catalog\Repository;
 use App\Module\Catalog\Domain\Category;
 use App\Module\Catalog\Domain\Item;
 use App\Module\Catalog\Domain\Page;
+use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
+use Doctrine\ORM\QueryBuilder;
+use Doctrine\Persistence\ManagerRegistry;
 
 /**
- * Fixed in-memory catalogue, so the sandbox needs no database.
+ * @extends ServiceEntityRepository<Item>
  */
-final class ItemRepository
+final class ItemRepository extends ServiceEntityRepository
 {
-    private const NAMES = [
-        'Anvil', 'Bellows', 'Chisel', 'Drill', 'Easel', 'File', 'Gouge', 'Hammer',
-        'Inkwell', 'Jigsaw', 'Kettle', 'Ladder', 'Mallet', 'Needle', 'Oilcan',
-        'Plane', 'Quill', 'Rasp', 'Saw', 'Trowel', 'Umbrella', 'Vice', 'Wrench',
-    ];
-
-    /** @var list<Item>|null */
-    private ?array $items = null;
-
-    private ?Item $cheapest = null;
-    private bool $cheapestLoaded = false;
-
-    /** @return list<Item> */
-    public function all(): array
+    public function __construct(ManagerRegistry $registry)
     {
-        if (null === $this->items) {
-            $this->items = [];
-            foreach (self::NAMES as $i => $name) {
-                $this->items[] = new Item(
-                    id: sprintf('item-%02d', $i + 1),
-                    name: $name,
-                    priceMinor: 500 + $i * 125,
-                    currency: 'GBP',
-                    createdAt: new \DateTimeImmutable(sprintf('2026-01-%02dT09:00:00+00:00', $i + 1)),
-                    category: $this->categoryFor($i, $name),
-                );
-            }
-        }
-
-        return $this->items;
-    }
-
-    public function paginate(int $page, int $perPage, ?array $items = null): Page
-    {
-        $items ??= $this->all();
-        $offset = ($page - 1) * $perPage;
-
-        return new Page(
-            items: array_slice($items, $offset, $perPage),
-            page: $page,
-            perPage: $perPage,
-            total: count($items),
-        );
-    }
-
-    /** @return list<Item> */
-    public function allByMaxPrice(int $maxPriceMinor): array
-    {
-        return array_values(
-            array_filter(
-                $this->all(),
-                static fn (Item $item): bool => $item->priceMinor <= $maxPriceMinor,
-            ),
-        );
-    }
-
-    public function find(string $id): ?Item
-    {
-        foreach ($this->all() as $item) {
-            if ($item->id === $id) {
-                return $item;
-            }
-        }
-
-        return null;
+        parent::__construct($registry, Item::class);
     }
 
     /**
-     * Finds the cheapest item, breaking ties by the lowest id.
-     *
-     * This repository is backed by a fixed in-memory catalogue, so a single
-     * linear scan is acceptable and the result is memoised for subsequent
-     * calls. If this catalogue is ever moved to a real database, replace this
-     * in-PHP scan with a query that orders by price and id and returns one row.
+     * Counts, filters by maximum price (minor units, converted by the caller),
+     * sorts by id and paginates, entirely in SQL.
      */
-    public function findCheapest(): ?Item
+    public function paginate(int $page, int $perPage, ?int $maxPriceMinor = null): Page
     {
-        if ($this->cheapestLoaded) {
-            return $this->cheapest;
-        }
+        $total = (int) $this->filteredQueryBuilder($maxPriceMinor)
+            ->select('COUNT(i.id)')
+            ->getQuery()
+            ->getSingleScalarResult();
 
-        $cheapest = null;
-        foreach ($this->all() as $item) {
-            if (null === $cheapest || $item->priceMinor < $cheapest->priceMinor) {
-                $cheapest = $item;
-                continue;
-            }
+        $items = $this->filteredQueryBuilder($maxPriceMinor)
+            ->orderBy('i.id', 'ASC')
+            ->setFirstResult(($page - 1) * $perPage)
+            ->setMaxResults($perPage)
+            ->getQuery()
+            ->getResult();
 
-            if ($item->priceMinor === $cheapest->priceMinor && $item->id < $cheapest->id) {
-                $cheapest = $item;
-            }
-        }
-
-        $this->cheapest = $cheapest;
-        $this->cheapestLoaded = true;
-
-        return $cheapest;
+        return new Page(
+            items: $items,
+            page: $page,
+            perPage: $perPage,
+            total: $total,
+        );
     }
 
-    private function categoryFor(int $index, string $name): Category
+    public function totalCount(): int
     {
-        if ($index < 8) {
-            return Category::workshop();
-        }
+        return (int) $this->createQueryBuilder('i')
+            ->select('COUNT(i.id)')
+            ->getQuery()
+            ->getSingleScalarResult();
+    }
 
-        if ('Inkwell' === $name || 'Quill' === $name) {
-            return Category::writing();
-        }
+    public function findOne(string $id): ?Item
+    {
+        return $this->createQueryBuilder('i')
+            ->where('i.id = :id')
+            ->setParameter('id', $id)
+            ->getQuery()
+            ->getOneOrNullResult();
+    }
 
-        return Category::garden();
+    public function findCheapest(): ?Item
+    {
+        return $this->createQueryBuilder('i')
+            ->orderBy('i.priceMinor', 'ASC')
+            ->addOrderBy('i.id', 'ASC')
+            ->setMaxResults(1)
+            ->getQuery()
+            ->getOneOrNullResult();
     }
 
     /**
@@ -130,20 +79,34 @@ final class ItemRepository
      */
     public function categoriesWithCounts(): array
     {
-        $counts = [];
-        foreach ($this->all() as $item) {
-            $id = $item->category->id;
-            if (!isset($counts[$id])) {
-                $counts[$id] = ['category' => $item->category, 'count' => 0];
-            }
-            ++$counts[$id]['count'];
+        $rows = $this->createQueryBuilder('i')
+            ->select('c.id AS categoryId, c.name AS categoryName, COUNT(i.id) AS count')
+            ->join('i.category', 'c')
+            ->groupBy('c.id')
+            ->addGroupBy('c.name')
+            ->orderBy('c.name', 'ASC')
+            ->getQuery()
+            ->getResult();
+
+        return array_map(
+            static fn (array $row): array => [
+                'category' => new Category((string) $row['categoryId'], (string) $row['categoryName']),
+                'count' => (int) $row['count'],
+            ],
+            $rows,
+        );
+    }
+
+    private function filteredQueryBuilder(?int $maxPriceMinor): QueryBuilder
+    {
+        $queryBuilder = $this->createQueryBuilder('i');
+
+        if (null !== $maxPriceMinor) {
+            $queryBuilder
+                ->where('i.priceMinor <= :maxPrice')
+                ->setParameter('maxPrice', $maxPriceMinor);
         }
 
-        usort(
-            $counts,
-            static fn (array $a, array $b): int => $a['category']->name <=> $b['category']->name,
-        );
-
-        return array_values($counts);
+        return $queryBuilder;
     }
 }
