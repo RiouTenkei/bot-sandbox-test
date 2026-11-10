@@ -27,6 +27,12 @@ final class TaskRepository
         'Close the ticket',
     ];
 
+    /** @var array<string, list<string>> */
+    private const PARENT_CHILDREN = [
+        'task-01' => ['task-02', 'task-03'],
+        'task-04' => ['task-05', 'task-06'],
+    ];
+
     /** @var list<Task>|null */
     private ?array $tasks = null;
 
@@ -34,15 +40,27 @@ final class TaskRepository
     public function all(): array
     {
         if (null === $this->tasks) {
-            $this->tasks = [];
+            $tasksById = [];
             foreach (self::TITLES as $i => $title) {
-                $this->tasks[] = new Task(
-                    id: sprintf('task-%02d', $i + 1),
+                $id = sprintf('task-%02d', $i + 1);
+                $tasksById[$id] = new Task(
+                    id: $id,
                     title: $title,
                     isDone: $i < 3,
                     createdAt: new \DateTimeImmutable(sprintf('2026-02-%02dT10:00:00+00:00', $i + 1)),
                 );
             }
+
+            foreach (self::PARENT_CHILDREN as $parentId => $childrenIds) {
+                $parent = $tasksById[$parentId];
+                $children = [];
+                foreach ($childrenIds as $childId) {
+                    $children[] = $tasksById[$childId];
+                }
+                $parent->attachChildren($children);
+            }
+
+            $this->tasks = array_values($tasksById);
         }
 
         return $this->tasks;

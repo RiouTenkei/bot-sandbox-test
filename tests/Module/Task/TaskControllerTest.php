@@ -26,6 +26,25 @@ final class TaskControllerTest extends WebTestCase
                 'title' => 'Plan the sprint',
                 'isDone' => true,
                 'createdAt' => '2026-02-01T10:00:00+00:00',
+                'parentId' => null,
+                'children' => [
+                    [
+                        'id' => 'task-02',
+                        'title' => 'Write the tests',
+                        'isDone' => true,
+                        'createdAt' => '2026-02-02T10:00:00+00:00',
+                        'parentId' => 'task-01',
+                        'children' => [],
+                    ],
+                    [
+                        'id' => 'task-03',
+                        'title' => 'Build the controller',
+                        'isDone' => true,
+                        'createdAt' => '2026-02-03T10:00:00+00:00',
+                        'parentId' => 'task-01',
+                        'children' => [],
+                    ],
+                ],
             ],
             $body['items'][0],
         );
@@ -73,6 +92,47 @@ final class TaskControllerTest extends WebTestCase
                 'title' => 'Build the controller',
                 'isDone' => true,
                 'createdAt' => '2026-02-03T10:00:00+00:00',
+                'parentId' => 'task-01',
+                'children' => [],
+            ],
+            $task,
+        );
+    }
+
+    public function testGetParentTaskIncludesChildren(): void
+    {
+        $client = static::createClient();
+        $client->request('GET', '/api/tasks/task-01');
+
+        self::assertResponseIsSuccessful();
+        $task = json_decode((string) $client->getResponse()->getContent(), true);
+
+        self::assertSame('task-01', $task['id']);
+        self::assertNull($task['parentId']);
+        self::assertCount(2, $task['children']);
+        self::assertSame('task-02', $task['children'][0]['id']);
+        self::assertSame('task-03', $task['children'][1]['id']);
+        self::assertSame('task-01', $task['children'][0]['parentId']);
+        self::assertSame('task-01', $task['children'][1]['parentId']);
+        self::assertSame([], $task['children'][0]['children']);
+    }
+
+    public function testGetChildTaskIncludesParentId(): void
+    {
+        $client = static::createClient();
+        $client->request('GET', '/api/tasks/task-02');
+
+        self::assertResponseIsSuccessful();
+        $task = json_decode((string) $client->getResponse()->getContent(), true);
+
+        self::assertSame(
+            [
+                'id' => 'task-02',
+                'title' => 'Write the tests',
+                'isDone' => true,
+                'createdAt' => '2026-02-02T10:00:00+00:00',
+                'parentId' => 'task-01',
+                'children' => [],
             ],
             $task,
         );
