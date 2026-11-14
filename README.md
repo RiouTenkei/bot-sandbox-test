@@ -14,3 +14,7 @@ Endpoints: `GET /api/items`, `GET /api/items/{id}`.
 Tested on PHP 8.4; PHP 8.5 support is planned.
 
 `main` is protected: changes only via PR, one human approval, CI green, no bypass. Bots open PRs; only a person can merge.
+
+## Deploying
+
+Merges to `main` are released by release-please. Tag the release, then bump the image in the deploy repo.
