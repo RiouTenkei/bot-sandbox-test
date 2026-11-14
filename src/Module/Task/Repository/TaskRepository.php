@@ -79,6 +79,17 @@ final class TaskRepository
         );
     }
 
+    /** @return array{total: int, done: int} */
+    public function count(): array
+    {
+        $tasks = $this->all();
+
+        return [
+            'total' => count($tasks),
+            'done' => count(array_filter($tasks, static fn (Task $task): bool => $task->isDone)),
+        ];
+    }
+
     public function find(string $id): ?Task
     {
         foreach ($this->all() as $task) {

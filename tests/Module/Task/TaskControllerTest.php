@@ -78,6 +78,18 @@ final class TaskControllerTest extends WebTestCase
         self::assertSame(12, $body['total']);
     }
 
+    public function testCountReturnsTotals(): void
+    {
+        $client = static::createClient();
+        $client->request('GET', '/api/tasks/count');
+
+        self::assertResponseIsSuccessful();
+        self::assertSame(
+            ['total' => 12, 'done' => 3],
+            json_decode((string) $client->getResponse()->getContent(), true),
+        );
+    }
+
     public function testGetReturnsOneTask(): void
     {
         $client = static::createClient();

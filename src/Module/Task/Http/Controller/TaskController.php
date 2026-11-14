@@ -39,6 +39,12 @@ final class TaskController extends AbstractController
         return new JsonResponse(TaskView::page($this->tasks->paginate($page, $perPage)));
     }
 
+    #[Route('/api/tasks/count', methods: ['GET'])]
+    public function count(): JsonResponse
+    {
+        return new JsonResponse($this->tasks->count());
+    }
+
     #[Route('/api/tasks/{id}', methods: ['GET'])]
     public function get(string $id): JsonResponse
     {
