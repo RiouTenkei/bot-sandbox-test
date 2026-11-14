@@ -16,32 +16,32 @@ final class TaskControllerTest extends WebTestCase
         self::assertResponseIsSuccessful();
         $body = json_decode((string) $client->getResponse()->getContent(), true);
 
-        self::assertCount(10, $body['items']);
+        self::assertCount(9, $body['items']);
         self::assertSame(1, $body['page']);
         self::assertSame(10, $body['perPage']);
-        self::assertSame(12, $body['total']);
+        self::assertSame(9, $body['total']);
         self::assertSame(
             [
-                'id' => 'task-01',
-                'title' => 'Plan the sprint',
-                'isDone' => true,
-                'createdAt' => '2026-02-01T10:00:00+00:00',
+                'id' => 'task-04',
+                'title' => 'Wire the repository',
+                'isDone' => false,
+                'createdAt' => '2026-02-04T10:00:00+00:00',
                 'parentId' => null,
                 'children' => [
                     [
-                        'id' => 'task-02',
-                        'title' => 'Write the tests',
-                        'isDone' => true,
-                        'createdAt' => '2026-02-02T10:00:00+00:00',
-                        'parentId' => 'task-01',
+                        'id' => 'task-05',
+                        'title' => 'Add the view layer',
+                        'isDone' => false,
+                        'createdAt' => '2026-02-05T10:00:00+00:00',
+                        'parentId' => 'task-04',
                         'children' => [],
                     ],
                     [
-                        'id' => 'task-03',
-                        'title' => 'Build the controller',
-                        'isDone' => true,
-                        'createdAt' => '2026-02-03T10:00:00+00:00',
-                        'parentId' => 'task-01',
+                        'id' => 'task-06',
+                        'title' => 'Run the suite',
+                        'isDone' => false,
+                        'createdAt' => '2026-02-06T10:00:00+00:00',
+                        'parentId' => 'task-04',
                         'children' => [],
                     ],
                 ],
@@ -58,11 +58,11 @@ final class TaskControllerTest extends WebTestCase
         self::assertResponseIsSuccessful();
         $body = json_decode((string) $client->getResponse()->getContent(), true);
 
-        self::assertCount(5, $body['items']);
+        self::assertCount(4, $body['items']);
         self::assertSame(2, $body['page']);
         self::assertSame(5, $body['perPage']);
-        self::assertSame(12, $body['total']);
-        self::assertSame('task-06', $body['items'][0]['id']);
+        self::assertSame(9, $body['total']);
+        self::assertSame('task-09', $body['items'][0]['id']);
     }
 
     public function testListCapsPerPageAndTreatsLowPageAsOne(): void
@@ -75,7 +75,63 @@ final class TaskControllerTest extends WebTestCase
 
         self::assertSame(1, $body['page']);
         self::assertSame(50, $body['perPage']);
-        self::assertSame(12, $body['total']);
+        self::assertSame(9, $body['total']);
+    }
+
+    public function testListWithDoneTrueReturnsOnlyFinishedTasks(): void
+    {
+        $client = static::createClient();
+        $client->request('GET', '/api/tasks?done=true');
+
+        self::assertResponseIsSuccessful();
+        $body = json_decode((string) $client->getResponse()->getContent(), true);
+
+        self::assertCount(3, $body['items']);
+        self::assertSame(3, $body['total']);
+        foreach ($body['items'] as $item) {
+            self::assertTrue($item['isDone']);
+        }
+    }
+
+    public function testListWithDoneFalseReturnsOnlyOpenTasks(): void
+    {
+        $client = static::createClient();
+        $client->request('GET', '/api/tasks?done=false');
+
+        self::assertResponseIsSuccessful();
+        $body = json_decode((string) $client->getResponse()->getContent(), true);
+
+        self::assertCount(9, $body['items']);
+        self::assertSame(9, $body['total']);
+        foreach ($body['items'] as $item) {
+            self::assertFalse($item['isDone']);
+        }
+    }
+
+    public function testListWithInvalidDoneReturns400(): void
+    {
+        $client = static::createClient();
+        $client->request('GET', '/api/tasks?done=maybe');
+
+        self::assertResponseStatusCodeSame(400);
+        self::assertSame(['error' => 'done must be true or false'], json_decode((string) $client->getResponse()->getContent(), true));
+    }
+
+    public function testListWithDoneRespectsPagination(): void
+    {
+        $client = static::createClient();
+        $client->request('GET', '/api/tasks?done=false&page=2&perPage=5');
+
+        self::assertResponseIsSuccessful();
+        $body = json_decode((string) $client->getResponse()->getContent(), true);
+
+        self::assertCount(4, $body['items']);
+        self::assertSame(2, $body['page']);
+        self::assertSame(5, $body['perPage']);
+        self::assertSame(9, $body['total']);
+        foreach ($body['items'] as $item) {
+            self::assertFalse($item['isDone']);
+        }
     }
 
     public function testGetReturnsOneTask(): void
