@@ -66,9 +66,12 @@ final class TaskRepository
         return $this->tasks;
     }
 
-    public function paginate(int $page, int $perPage, ?array $tasks = null, string $sort = 'id'): Page
+    public function paginate(int $page, int $perPage, bool $done = false, string $sort = 'id'): Page
     {
-        $tasks ??= $this->all();
+        $tasks = array_values(array_filter(
+            $this->all(),
+            static fn (Task $task): bool => $task->isDone === $done,
+        ));
         $tasks = $this->sort($tasks, $sort);
         $offset = ($page - 1) * $perPage;
 
@@ -78,6 +81,17 @@ final class TaskRepository
             perPage: $perPage,
             total: count($tasks),
         );
+    }
+
+    /** @return array{total: int, done: int} */
+    public function count(): array
+    {
+        $tasks = $this->all();
+
+        return [
+            'total' => count($tasks),
+            'done' => count(array_filter($tasks, static fn (Task $task): bool => $task->isDone)),
+        ];
     }
 
     public function find(string $id): ?Task
