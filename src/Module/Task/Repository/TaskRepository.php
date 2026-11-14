@@ -66,12 +66,13 @@ final class TaskRepository
         return $this->tasks;
     }
 
-    public function paginate(int $page, int $perPage, bool $done = false): Page
+    public function paginate(int $page, int $perPage, bool $done = false, string $sort = 'id'): Page
     {
         $tasks = array_values(array_filter(
             $this->all(),
             static fn (Task $task): bool => $task->isDone === $done,
         ));
+        $tasks = $this->sort($tasks, $sort);
         $offset = ($page - 1) * $perPage;
 
         return new Page(
@@ -102,5 +103,23 @@ final class TaskRepository
         }
 
         return null;
+    }
+
+    /** @param list<Task> $tasks
+     *  @return list<Task>
+     */
+    private function sort(array $tasks, string $sort): array
+    {
+        if ('id' === $sort) {
+            return $tasks;
+        }
+
+        usort($tasks, static function (Task $a, Task $b) use ($sort): int {
+            return '-' === $sort[0]
+                ? strcmp($b->title, $a->title)
+                : strcmp($a->title, $b->title);
+        });
+
+        return $tasks;
     }
 }
