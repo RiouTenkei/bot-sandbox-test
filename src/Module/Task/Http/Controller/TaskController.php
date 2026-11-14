@@ -36,7 +36,17 @@ final class TaskController extends AbstractController
             $perPage = self::MAX_PER_PAGE;
         }
 
-        return new JsonResponse(TaskView::page($this->tasks->paginate($page, $perPage)));
+        $done = false;
+        $doneParam = $request->query->get('done');
+        if (null !== $doneParam && '' !== $doneParam) {
+            $lower = strtolower((string) $doneParam);
+            if ('true' !== $lower && 'false' !== $lower) {
+                return new JsonResponse(['error' => 'done must be true or false'], 400);
+            }
+            $done = 'true' === $lower;
+        }
+
+        return new JsonResponse(TaskView::page($this->tasks->paginate($page, $perPage, $done)));
     }
 
     #[Route('/api/tasks/{id}', methods: ['GET'])]

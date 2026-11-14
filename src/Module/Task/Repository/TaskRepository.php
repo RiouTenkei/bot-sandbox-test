@@ -66,9 +66,12 @@ final class TaskRepository
         return $this->tasks;
     }
 
-    public function paginate(int $page, int $perPage, ?array $tasks = null): Page
+    public function paginate(int $page, int $perPage, bool $done = false): Page
     {
-        $tasks ??= $this->all();
+        $tasks = array_values(array_filter(
+            $this->all(),
+            static fn (Task $task): bool => $task->isDone === $done,
+        ));
         $offset = ($page - 1) * $perPage;
 
         return new Page(
