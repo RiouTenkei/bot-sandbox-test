@@ -13,8 +13,9 @@ use Symfony\Component\Routing\Attribute\Route;
 
 final class TaskController extends AbstractController
 {
-    private const int DEFAULT_PER_PAGE = 10;
+    private const int DEFAULT_PER_PAGE = 20;
     private const int MAX_PER_PAGE = 50;
+    private const array ALLOWED_SORTS = ['id', 'title', '-title'];
 
     public function __construct(private readonly TaskRepository $tasks)
     {
@@ -36,7 +37,14 @@ final class TaskController extends AbstractController
             $perPage = self::MAX_PER_PAGE;
         }
 
-        return new JsonResponse(TaskView::page($this->tasks->paginate($page, $perPage)));
+        $sort = (string) $request->query->get('sort', 'id');
+        if (!in_array($sort, self::ALLOWED_SORTS, true)) {
+            return new JsonResponse([
+                'error' => sprintf('Unknown sort "%s"; allowed values are: id, title, -title', $sort),
+            ], 400);
+        }
+
+        return new JsonResponse(TaskView::page($this->tasks->paginate($page, $perPage, sort: $sort)));
     }
 
     #[Route('/api/tasks/{id}', methods: ['GET'])]

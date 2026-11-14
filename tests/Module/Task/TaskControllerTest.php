@@ -16,9 +16,9 @@ final class TaskControllerTest extends WebTestCase
         self::assertResponseIsSuccessful();
         $body = json_decode((string) $client->getResponse()->getContent(), true);
 
-        self::assertCount(10, $body['items']);
+        self::assertCount(12, $body['items']);
         self::assertSame(1, $body['page']);
-        self::assertSame(10, $body['perPage']);
+        self::assertSame(20, $body['perPage']);
         self::assertSame(12, $body['total']);
         self::assertSame(
             [
@@ -76,6 +76,58 @@ final class TaskControllerTest extends WebTestCase
         self::assertSame(1, $body['page']);
         self::assertSame(50, $body['perPage']);
         self::assertSame(12, $body['total']);
+    }
+
+    public function testListSortByTitle(): void
+    {
+        $client = static::createClient();
+        $client->request('GET', '/api/tasks?sort=title');
+
+        self::assertResponseIsSuccessful();
+        $body = json_decode((string) $client->getResponse()->getContent(), true);
+
+        self::assertCount(12, $body['items']);
+        self::assertSame('Add the view layer', $body['items'][0]['title']);
+        $titles = array_column($body['items'], 'title');
+        $sorted = $titles;
+        sort($sorted, SORT_STRING);
+        self::assertSame($sorted, $titles);
+    }
+
+    public function testListSortByTitleDesc(): void
+    {
+        $client = static::createClient();
+        $client->request('GET', '/api/tasks?sort=-title');
+
+        self::assertResponseIsSuccessful();
+        $body = json_decode((string) $client->getResponse()->getContent(), true);
+
+        self::assertCount(12, $body['items']);
+        self::assertSame('Write the tests', $body['items'][0]['title']);
+        $titles = array_column($body['items'], 'title');
+        $sorted = $titles;
+        rsort($sorted, SORT_STRING);
+        self::assertSame($sorted, $titles);
+    }
+
+    public function testListDefaultSortIsId(): void
+    {
+        $client = static::createClient();
+        $client->request('GET', '/api/tasks');
+
+        self::assertResponseIsSuccessful();
+        $body = json_decode((string) $client->getResponse()->getContent(), true);
+
+        self::assertSame('task-01', $body['items'][0]['id']);
+    }
+
+    public function testListUnknownSortIs400(): void
+    {
+        $client = static::createClient();
+        $client->request('GET', '/api/tasks?sort=colour');
+
+        self::assertResponseStatusCodeSame(400);
+        self::assertStringContainsString('id, title, -title', (string) $client->getResponse()->getContent());
     }
 
     public function testGetReturnsOneTask(): void
